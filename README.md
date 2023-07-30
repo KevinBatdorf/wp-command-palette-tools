@@ -13,3 +13,6 @@ Many more coming soon!
 ### Fun
 - Fire confetti
 - Fire confetti with 3s delay
+
+![alt text](.wordpress-org/screenshot-1.png 'Math')
+![alt text](.wordpress-org/screenshot-2.png 'Color')

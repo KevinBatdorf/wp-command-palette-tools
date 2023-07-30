@@ -24,6 +24,7 @@ export const colorConversions = (search: string) => {
 		setIsLoading(false);
 	}, [search]);
 
+	// @ts-ignore
 	if (!color?.parsed) return null;
 	const colors = {
 		hex: {
