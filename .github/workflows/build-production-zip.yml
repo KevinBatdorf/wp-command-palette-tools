@@ -23,7 +23,7 @@ jobs:
             - name: Package
               uses: actions/upload-artifact@v3
               with:
-                  name: rust-starter
+                  name: wpcp-tools
                   retention-days: 5
                   path: |
                       ${{ github.workspace }}/
