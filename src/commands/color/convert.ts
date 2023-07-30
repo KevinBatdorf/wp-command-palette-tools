@@ -24,6 +24,7 @@ export const colorConversions = (search: string) => {
 		setIsLoading(false);
 	}, [search]);
 
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore
 	if (!color?.parsed) return null;
 	const colors = {
