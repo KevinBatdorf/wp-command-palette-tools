@@ -5,7 +5,6 @@ import { confettiBasic, confettiThreeSeconds } from './confetti';
 
 registerPlugin('wpcp-tools-fun', {
 	render: () => {
-		if (!useCommand) return null;
 		useCommand(confettiBasic);
 		useCommand(confettiThreeSeconds);
 		return null;

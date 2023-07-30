@@ -4,14 +4,14 @@ import copy from 'copy-to-clipboard';
 import { fireNotice } from '../../lib/wordpress';
 import { __, sprintf } from '@wordpress/i18n';
 import { colorIcon } from './icons';
-import { colord, extend } from 'colord';
+import { colord, extend, Colord } from 'colord';
 import namesPlugin from 'colord/plugins/names';
 
 extend([namesPlugin]);
 
 export const colorConversions = (search: string) => {
 	const [isLoading, setIsLoading] = useState(true);
-	const [color, setColor] = useState<any>();
+	const [color, setColor] = useState<Colord>();
 
 	useEffect(() => {
 		setIsLoading(true);
@@ -48,6 +48,7 @@ export const colorConversions = (search: string) => {
 		isLoading,
 		commands: Object.entries(colors)
 			// Don't include the search if it matches the value
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			.filter(([_, value]) => value.value !== search)
 			.map(([key, value]) => ({
 				name: `${NAMESPACE}/color/convert/${key}`,
