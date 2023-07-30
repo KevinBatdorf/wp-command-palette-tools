@@ -25,9 +25,7 @@ add_action('enqueue_block_editor_assets', function () use ($wpcp_tools_assets) {
 		wp_enqueue_script(
 			"kevinbatdorf/wpcp-tools-$asset",
 			plugins_url("build/$asset.js", __FILE__),
-			array_filter($deps['dependencies'], function($dep) {
-				return $dep !== 'wp-commands'; // TODO: temporary until 6.3 release
-			}),
+			$deps['dependencies'],
 			$deps['version'],
 			true
 		);
