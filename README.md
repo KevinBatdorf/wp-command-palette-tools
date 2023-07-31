@@ -18,3 +18,4 @@ Many more coming soon!
 
 ![alt text](.wordpress-org/screenshot-1.png 'Math')
 ![alt text](.wordpress-org/screenshot-2.png 'Color')
+![alt text](.wordpress-org/screenshot-3.gif 'Fun')
