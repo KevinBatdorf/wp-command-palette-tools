@@ -12,6 +12,12 @@ A collection of productivity tools for the WordPress Command Palette
 
 Productivity tools for the WordPress Command Palette.
 
+=== What is it? ===
+
+WordPress 6.3 comes with a command pallete utility interface that lets you interact with your site using a launcher similar to Raycast, Spotlight, Alfred, etc. Read more about it here:
+
+(Introducing the WordPress Command Palette API)[https://make.wordpress.org/core/2023/07/17/introducing-the-wordpress-command-palette-api]
+
 === Math ===
 - Evaluate expressions
 

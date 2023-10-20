@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Command Palette Tools
  * Description:       A collection of productivity tools for the WordPress Command Palette
- * Requires at least: 6.2
+ * Requires at least: 6.3
  * Requires PHP:      7.0
  * Version:           0.1.0
  * Author:            Kevin Batdorf
