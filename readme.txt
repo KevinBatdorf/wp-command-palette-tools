@@ -1,8 +1,8 @@
 === Command Palette Tools ===
 Contributors:      kbat82
-Tags:              command palette, productivity
-Tested up to:      6.3
-Stable tag:        0.1.0
+Tags:              command palette, productivity, confetti, math, color
+Tested up to:      6.4
+Stable tag:        1.0.0
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -37,8 +37,11 @@ WordPress 6.3 comes with a command pallete utility interface that lets you inter
 
 == Screenshots ==
 
+1. Run complex math equations
+2. Convert colors to hex values
+3. Fire confetti with or without delay
 
 == Changelog ==
 
-= 0.1.0 - 2023-02-05 =
+= 1.0.0 - 2023-11-01 =
 - Initial release
