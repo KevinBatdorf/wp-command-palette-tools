@@ -6,7 +6,7 @@ on:
     workflow_dispatch:
 jobs:
     prepare_spec_files:
-        name: Prepage file list
+        name: Prepare file list
         runs-on: ubuntu-latest
         outputs:
             spec: ${{ steps.files.outputs.spec }}

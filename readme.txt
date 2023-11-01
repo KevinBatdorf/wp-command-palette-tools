@@ -37,6 +37,9 @@ WordPress 6.3 comes with a command pallete utility interface that lets you inter
 
 == Screenshots ==
 
+1. Run complex math equations
+2. Convert colors to hex values
+3. Fire confetti with or without delay
 
 == Changelog ==
 
