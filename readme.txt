@@ -12,6 +12,8 @@ A collection of productivity tools for the WordPress Command Palette
 
 Productivity tools for the WordPress Command Palette.
 
+Star it on [GitHub](https://github.com/KevinBatdorf/wp-command-palette-tools)
+
 === What is it? ===
 
 WordPress 6.3 comes with a command pallete utility interface that lets you interact with your site using a launcher similar to Raycast, Spotlight, Alfred, etc. Read more about it here:
