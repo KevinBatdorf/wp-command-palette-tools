@@ -1,10 +1,10 @@
-import { NAMESPACE } from '../../constants';
-import confetti from 'canvas-confetti';
-import { confettiIcon } from './icons';
+import confetti from "canvas-confetti";
+import { NAMESPACE } from "../../constants";
+import { confettiIcon } from "./icons";
 
 export const confettiBasic = {
 	name: `${NAMESPACE}/confetti`,
-	label: 'Confetti',
+	label: "Confetti",
 	icon: confettiIcon,
 	callback: ({ close }: { close: () => void }) => {
 		close();
@@ -13,7 +13,7 @@ export const confettiBasic = {
 };
 export const confettiThreeSeconds = {
 	name: `${NAMESPACE}/confetti/5-seconds`,
-	label: 'Confetti (3 seconds delay)',
+	label: "Confetti (3 seconds delay)",
 	icon: confettiIcon,
 	callback: async ({ close }: { close: () => void }) => {
 		close();

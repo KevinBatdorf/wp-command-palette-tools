@@ -1,10 +1,10 @@
-import { useEffect, useState } from '@wordpress/element';
-import { calc } from './icons';
-import { evaluate } from 'mathjs';
-import { NAMESPACE } from '../../constants';
-import copy from 'copy-to-clipboard';
-import { fireNotice } from '../../lib/wordpress';
-import { __ } from '@wordpress/i18n';
+import { useEffect, useState } from "@wordpress/element";
+import { __ } from "@wordpress/i18n";
+import copy from "copy-to-clipboard";
+import { evaluate } from "mathjs";
+import { NAMESPACE } from "../../constants";
+import { fireNotice } from "../../lib/wordpress";
+import { calc } from "./icons";
 
 export const doBasicMath = (search: string) => {
 	const [isLoading, setIsLoading] = useState(true);
@@ -15,11 +15,11 @@ export const doBasicMath = (search: string) => {
 		if (!search) return;
 		try {
 			const result = evaluate(search);
-			if (typeof result !== 'number') {
+			if (typeof result !== "number") {
 				throw new Error();
 			}
 			setOutput(String(result));
-		} catch (e) {
+		} catch (_e) {
 			setOutput(undefined);
 		}
 		setIsLoading(false);
@@ -36,7 +36,7 @@ export const doBasicMath = (search: string) => {
 				icon: calc,
 				callback: ({ close }: { close: () => void }) => {
 					copy(output);
-					fireNotice(__('Copied to clipboard!', 'wpcp-tools'));
+					fireNotice(__("Copied to clipboard!", "wpcp-tools"));
 					close();
 				},
 			},

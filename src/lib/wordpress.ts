@@ -1,4 +1,4 @@
-import { dispatch } from '@wordpress/data';
+import { dispatch } from "@wordpress/data";
 
 const wpCommands = window.wp?.commands;
 export const useCommand = (command: WpCommand) =>
@@ -7,10 +7,16 @@ export const useCommandLoader = (loader: CommandLoader) =>
 	wpCommands?.useCommandLoader?.(loader);
 
 export const fireNotice = (message: string) => {
-	const { createNotice } = dispatch('core/notices');
-	createNotice('info', message, {
+	const { createNotice } = dispatch("core/notices") as {
+		createNotice: (
+			status: string,
+			content: string,
+			options: Record<string, unknown>,
+		) => void;
+	};
+	createNotice("info", message, {
 		isDismissible: true,
-		type: 'snackbar',
+		type: "snackbar",
 	});
 };
 
