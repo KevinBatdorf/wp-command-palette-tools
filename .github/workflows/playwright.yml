@@ -9,6 +9,9 @@ on:
     # At 08:00 daily - good for keeping up with latest WP releases
     - cron: '0 8 * * *'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   playwright:
     timeout-minutes: 60
