@@ -2,9 +2,6 @@ name: Deploy to WordPress.org
 on:
   release:
     types: [published]
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   tag:
     name: Make release

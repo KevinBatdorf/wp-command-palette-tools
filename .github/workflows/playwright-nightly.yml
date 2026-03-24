@@ -1,15 +1,17 @@
-name: Playwright Tests
+name: Playwright Tests (Nightly)
 permissions:
   contents: write
 on:
-  pull_request:
   push:
     branches: main
+  schedule:
+    # At 08:00 daily - good for keeping up with latest WP releases
+    - cron: '0 8 * * *'
 
 jobs:
   playwright:
     timeout-minutes: 60
-    name: Run Playwright tests
+    name: Run Playwright tests (nightly)
     concurrency:
       group: ${{ github.workflow }} - ${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
@@ -63,10 +65,12 @@ jobs:
 
     - name: Run Playwright tests
       run: npx playwright test
+      env:
+        WP_VERSION: nightly
 
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
-        name: playwright-report
+        name: playwright-report-nightly
         path: playwright-report/
         retention-days: 30
