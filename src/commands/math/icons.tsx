@@ -6,7 +6,9 @@ export const calc = (
 		strokeWidth={1.5}
 		stroke="currentColor"
 		width={24}
-		height={24}>
+		height={24}
+		aria-hidden="true"
+	>
 		<path
 			fill="none"
 			strokeLinecap="round"

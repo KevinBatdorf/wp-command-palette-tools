@@ -1,1 +1,1 @@
-export const NAMESPACE = 'kevinbatdorf/wpcp-tools';
+export const NAMESPACE = "kevinbatdorf/wpcp-tools";

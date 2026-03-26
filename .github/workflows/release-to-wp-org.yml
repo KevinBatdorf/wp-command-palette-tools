@@ -1,31 +1,42 @@
 name: Deploy to WordPress.org
 on:
-    release:
-        types: [published]
+  release:
+    types: [published]
 jobs:
-    tag:
-        name: Make release
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
+  tag:
+    name: Make release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
 
-            - name: Install wasm-pack
-              uses: jetli/wasm-pack-action@v0.4.0
-            - name: npm install and build
-              run: |
-                  npm ci
-                  npx eslint --max-warnings 0 .
-                  npm run build
-              env:
-                  CI: true
+      - uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: 'npm'
 
-            - name: WordPress Plugin Deploy
-              id: deploy
-              uses: 10up/action-wordpress-plugin-deploy@stable
-              with:
-                  generate-zip: true
-              env:
-                  SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
-                  SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
-                  SLUG: command-palette-tools
+      - name: npm install and build
+        run: npm ci
+        env:
+          CI: true
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Build project
+        run: npm run build
+        env:
+          CI: true
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - name: WordPress Plugin Deploy
+        id: deploy
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        with:
+          generate-zip: true
+        env:
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SLUG: command-palette-tools

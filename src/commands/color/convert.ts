@@ -1,11 +1,11 @@
-import { useEffect, useState } from '@wordpress/element';
-import { NAMESPACE } from '../../constants';
-import copy from 'copy-to-clipboard';
-import { fireNotice } from '../../lib/wordpress';
-import { __, sprintf } from '@wordpress/i18n';
-import { colorIcon } from './icons';
-import { colord, extend, Colord } from 'colord';
-import namesPlugin from 'colord/plugins/names';
+import { useEffect, useState } from "@wordpress/element";
+import { __, sprintf } from "@wordpress/i18n";
+import { type Colord, colord, extend } from "colord";
+import namesPlugin from "colord/plugins/names";
+import copy from "copy-to-clipboard";
+import { NAMESPACE } from "../../constants";
+import { fireNotice } from "../../lib/wordpress";
+import { colorIcon } from "./icons";
 
 extend([namesPlugin]);
 
@@ -18,30 +18,30 @@ export const colorConversions = (search: string) => {
 		if (!search) return;
 		try {
 			setColor(colord(search));
-		} catch (e) {
+		} catch (_e) {
 			setColor(undefined);
 		}
 		setIsLoading(false);
 	}, [search]);
 
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-ignore
+	// @ts-expect-error
 	if (!color?.parsed) return null;
 	const colors = {
 		hex: {
-			label: 'hex',
+			label: "hex",
 			value: color.toHex(),
 		},
 		rgb: {
-			label: 'rgb',
+			label: "rgb",
 			value: color.toRgbString(),
 		},
 		hsl: {
-			label: 'hsl',
+			label: "hsl",
 			value: color.toHslString(),
 		},
 		name: {
-			label: 'name',
+			label: "name",
 			value: color.toName({ closest: true }),
 		},
 	};
@@ -56,15 +56,15 @@ export const colorConversions = (search: string) => {
 				name: `${NAMESPACE}/color/convert/${key}`,
 				// need to include the search in the label so it shows up in the search results
 				label: sprintf(
-					__('%s to %s: %s', 'wpcp-tools'),
+					__("%s to %s: %s", "wpcp-tools"),
 					search,
 					value.label,
-					value.value,
+					value.value ?? "",
 				),
 				icon: colorIcon,
 				callback: ({ close }: { close: () => void }) => {
-					copy(value.value);
-					fireNotice(__('Copied to clipboard!', 'wpcp-tools'));
+					copy(value.value ?? "");
+					fireNotice(__("Copied to clipboard!", "wpcp-tools"));
 					close();
 				},
 			})),

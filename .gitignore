@@ -1,10 +1,6 @@
 node_modules
 build
-/target
-
-cypress/screenshots/**/*
-!cypress/screenshots/**/.gitkeep
-cypress/videos/**/*
-!cypress/videos/**/.gitkeep
-cypress/downloads/**/*
-cypress/downloads/**/.gitkeep
+/test-results/
+/playwright-report/
+/blob-report/
+/artifacts/

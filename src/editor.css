@@ -1,23 +1,44 @@
-.wpcp-tools {
-	--tw-ring-inset: var(--tw-empty, /*!*/ /*!*/);
-	--tw-ring-offset-width: 0px;
-	--tw-ring-offset-color: transparent;
-	--tw-ring-color: var(--wp-admin-theme-color);
-	--tw-translate-x: 0;
-	--tw-translate-y: 0;
-	--tw-rotate: 0;
-	--tw-skew-x: 0;
-	--tw-skew-y: 0;
-	--tw-scale-x: 1;
-	--tw-scale-y: 1;
+@import "tailwindcss" source(none) important;
+@source "./commands";
+
+@theme {
+	--breakpoint-xxs: 280px;
+	--breakpoint-xs: 480px;
+	--breakpoint-sm: 600px;
+	--breakpoint-md: 782px;
+	--breakpoint-md2: 960px;
+	--breakpoint-lg: 1080px;
+	--breakpoint-xl: 1280px;
+	--breakpoint-2xl: 1440px;
+	--breakpoint-3xl: 1600px;
+	--breakpoint-4xl: 1920px;
+
+	--color-wp-theme-500: var(--wp-admin-theme-color);
+	--color-wp-theme-600: var(--wp-admin-theme-color-darker-10);
+	--color-wp-theme-700: var(--wp-admin-theme-color-darker-20);
+
+	--color-wp-alert-yellow: #f0b849;
+	--color-wp-alert-red: #cc1818;
+	--color-wp-alert-green: #4ab866;
+
+	--color-gray-50: #fbfbfb;
+	--color-gray-100: #f0f0f0;
+	--color-gray-150: #eaeaea;
+	--color-gray-200: #e0e0e0;
+	--color-gray-300: #dddddd;
+	--color-gray-400: #cccccc;
+	--color-gray-500: #cccccc;
+	--color-gray-600: #949494;
+	--color-gray-700: #757575;
+	--color-gray-900: #1e1e1e;
 }
-.wpcp-tools *,
-.wpcp-tools *:after,
-.wpcp-tools *:before {
-	box-sizing: border-box;
-	border: 0 solid #e5e7eb;
+
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		/* override */
+	}
 }
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-/* Add more styles here specific to the editor only */
