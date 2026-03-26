@@ -14,7 +14,7 @@
 		"plugin-zip": "wp-scripts plugin-zip",
 		"start": "wp-scripts start",
 		"start:hot": "wp-scripts start --hot",
-		"test:e2e": "npx playwright test",
+		"test:e2e": "node scripts/run-e2e.mjs",
 		"test:e2e:ui": "npx playwright test --ui"
 	},
 	"devDependencies": {
