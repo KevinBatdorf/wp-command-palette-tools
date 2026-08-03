@@ -40,7 +40,7 @@
 		"@wordpress/plugins": "^7.52.0",
 		"canvas-confetti": "^1.9.4",
 		"colord": "^2.9.3",
-		"copy-to-clipboard": "^4.0.2",
+		"copy-to-clipboard": "3.3.3",
 		"mathjs": "^15.2.0",
 		"postcss": "^8.5.25",
 		"postcss-prefix-selector": "^2.1.1",
