@@ -2,7 +2,7 @@
 Contributors:      kbat82
 Tags:              command palette, productivity, confetti, math, color
 Tested up to:      7.1
-Stable tag:        1.0.0
+Stable tag:        1.0.1
 License:           GPL-2.0-or-later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -44,6 +44,10 @@ WordPress 6.3 comes with a command pallete utility interface that lets you inter
 3. Fire confetti with or without delay
 
 == Changelog ==
+
+= 1.0.1 - 2026-08-15 =
+- Tested up to WordPress 7.1
+- Chore: Update GitHub Actions off the deprecated Node 20 runtime
 
 = 1.0.0 - 2023-11-01 =
 - Initial release
