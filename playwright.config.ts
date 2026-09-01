@@ -31,6 +31,12 @@ const portMap = Object.fromEntries(
 	blueprints.map((bp, i) => [bp, BASE_PORT + i]),
 );
 
+// requestUtils finds the REST root from WP_BASE_URL, not the project baseURL,
+// so rest() calls hit port 8889 without this. One port fits one blueprint.
+if (blueprints.length === 1) {
+	process.env.WP_BASE_URL = `http://127.0.0.1:${portMap[blueprints[0]]}`;
+}
+
 export default defineConfig({
 	forbidOnly: !!process.env.CI,
 	retries: 0,
