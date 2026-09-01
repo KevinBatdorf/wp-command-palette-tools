@@ -103,6 +103,14 @@ export const catalogState = (catalog: Catalog): CatalogState => {
 	return catalog.abilities.length ? "ready" : "empty";
 };
 
+// The listing carries no namespace field of its own.
+export const abilitySource = ({ name, category }: Ability) => {
+	const [namespace] = name.split("/");
+	if (!namespace || namespace === name) return category;
+
+	return category ? `${namespace}:${category}` : namespace;
+};
+
 export const filterAbilities = (abilities: Ability[], search: string) => {
 	const query = search.trim().toLowerCase();
 	if (!query) return abilities;

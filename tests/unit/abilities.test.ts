@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	type Ability,
+	abilitySource,
 	type Catalog,
 	catalogHash,
 	catalogState,
@@ -228,5 +229,20 @@ describe("filterAbilities", () => {
 
 	it("returns nothing when the search matches nothing", () => {
 		assert.deepEqual(filterAbilities(abilities, "zzz"), []);
+	});
+});
+
+describe("abilitySource", () => {
+	it("names the plugin the ability came from alongside its category", () => {
+		assert.equal(abilitySource(ability()), "core:site");
+		assert.equal(
+			abilitySource(ability({ name: "woo/update-price", category: "product" })),
+			"woo:product",
+		);
+	});
+
+	it("falls back when either half is missing", () => {
+		assert.equal(abilitySource(ability({ name: "nameless" })), "site");
+		assert.equal(abilitySource(ability({ category: "" })), "core");
 	});
 });

@@ -11,6 +11,7 @@ import { __, _n, sprintf } from "@wordpress/i18n";
 import { Icon, search as searchIcon } from "@wordpress/icons";
 import { Command } from "cmdk";
 import {
+	abilitySource,
 	type Catalog,
 	type CatalogState,
 	catalogState,
@@ -154,7 +155,7 @@ export const PaletteMenu = () => {
 												{ability.label}
 											</span>
 											<span className="commands-command-menu__item-category">
-												{ability.category}
+												{abilitySource(ability)}
 											</span>
 										</div>
 									</Command.Item>
