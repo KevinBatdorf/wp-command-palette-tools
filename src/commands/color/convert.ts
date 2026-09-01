@@ -24,9 +24,7 @@ export const colorConversions = (search: string) => {
 		setIsLoading(false);
 	}, [search]);
 
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-expect-error
-	if (!color?.parsed) return null;
+	if (!color?.isValid()) return null;
 	const colors = {
 		hex: {
 			label: "hex",

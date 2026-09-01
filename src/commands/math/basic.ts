@@ -1,9 +1,9 @@
 import { useEffect, useState } from "@wordpress/element";
 import { __ } from "@wordpress/i18n";
 import copy from "copy-to-clipboard";
-import { evaluate } from "mathjs";
 import { NAMESPACE } from "../../constants";
 import { fireNotice } from "../../lib/wordpress";
+import { evaluateExpression, formatResult } from "./evaluate";
 import { calc } from "./icons";
 
 export const doBasicMath = (search: string) => {
@@ -13,15 +13,8 @@ export const doBasicMath = (search: string) => {
 	useEffect(() => {
 		setIsLoading(true);
 		if (!search) return;
-		try {
-			const result = evaluate(search);
-			if (typeof result !== "number") {
-				throw new Error();
-			}
-			setOutput(String(result));
-		} catch (_e) {
-			setOutput(undefined);
-		}
+		const result = evaluateExpression(search);
+		setOutput(result === undefined ? undefined : formatResult(result));
 		setIsLoading(false);
 	}, [search]);
 
