@@ -1,9 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-	evaluateExpression,
-	formatResult,
-} from "../../src/commands/math/evaluate.ts";
+import { evaluateExpression, formatResult } from "../../src/lib/evaluate.ts";
 
 const evaluated = (input: string) => {
 	const result = evaluateExpression(input);

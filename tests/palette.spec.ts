@@ -41,7 +41,7 @@ test("lists the abilities core registers and narrows them by search", async ({
 	]);
 
 	await page.keyboard.type("zzz");
-	await expect(palette.getByText("No abilities found.")).toBeVisible();
+	await expect(palette.getByText("No results found.")).toBeVisible();
 });
 
 test("a keyboard-only pass reaches every result and dismisses the palette", async ({
@@ -88,4 +88,53 @@ test("Cmd+K still belongs to core's palette", async ({ admin, page }) => {
 	await expect(
 		page.getByRole("dialog", { name: "Ability palette" }),
 	).toBeHidden();
+});
+
+test("computed results answer the search itself", async ({ admin, page }) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+	await page.keyboard.type("2+2");
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	// The answer to what was typed outranks the catalogue.
+	await expect(palette.getByRole("option").first()).toHaveText("2+2 = 4");
+
+	await palette.getByRole("option", { name: "2+2 = 4" }).click();
+	await expect(palette).toBeHidden();
+	// Nothing outside the editor renders the notices store.
+	await expect(page.locator(".components-snackbar")).toContainText(
+		"Copied to clipboard!",
+	);
+});
+
+test("a tool that loads on demand still runs", async ({ admin, page }) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+	await page.keyboard.type("confetti");
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: "Confetti", exact: true }).click();
+
+	// The canvas only exists if the async chunk resolved.
+	await expect(page.locator("canvas")).toBeVisible();
+});
+
+test("an ability picked once comes back under Recent", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: /Get User Information/ }).click();
+	await expect(palette).toBeHidden();
+
+	await admin.visitAdminPage("options-general.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	await expect(palette.getByText("Recent")).toBeVisible();
+	await expect(palette.getByRole("option").first()).toContainText(
+		"Get User Information",
+	);
 });

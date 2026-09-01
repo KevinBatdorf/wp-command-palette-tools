@@ -1,4 +1,6 @@
 import { dispatch } from "@wordpress/data";
+import { store as noticesStore } from "@wordpress/notices";
+import type { ToolCommand } from "./tool-commands";
 
 const wpCommands = window.wp?.commands;
 export const useCommand = (command: WpCommand) =>
@@ -6,15 +8,24 @@ export const useCommand = (command: WpCommand) =>
 export const useCommandLoader = (loader: CommandLoader) =>
 	wpCommands?.useCommandLoader?.(loader);
 
-export const fireNotice = (message: string) => {
-	const { createNotice } = dispatch("core/notices") as {
-		createNotice: (
-			status: string,
-			content: string,
-			options: Record<string, unknown>,
-		) => void;
-	};
-	createNotice("info", message, {
+export const toEditorCommand = (
+	tool: ToolCommand,
+	icon: JSX.Element,
+): WpCommand => ({
+	name: tool.id,
+	label: tool.label,
+	keywords: tool.keywords,
+	icon,
+	callback: ({ close }) => {
+		close();
+		void tool.run(fireNotice);
+	},
+});
+
+// Importing the store is what registers it: outside the editor nothing else has.
+export const fireNotice = (message: string, context?: string) => {
+	dispatch(noticesStore).createNotice("info", message, {
+		context,
 		isDismissible: true,
 		type: "snackbar",
 	});
@@ -28,12 +39,15 @@ declare global {
 				useCommandLoader: (loader: CommandLoader) => void;
 			};
 		};
+		// The only user id a plain admin screen carries.
+		userSettings?: { uid?: string };
 	}
 }
 
 type WpCommand = {
 	name: string;
 	label: string;
+	keywords?: string[];
 	icon: JSX.Element;
 	callback: ({ close }: { close: () => void }) => void;
 };

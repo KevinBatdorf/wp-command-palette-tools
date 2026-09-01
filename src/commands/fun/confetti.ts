@@ -1,28 +1,6 @@
 import confetti from "canvas-confetti";
-import { NAMESPACE } from "../../constants";
-import { confettiIcon } from "./icons";
 
-export const confettiBasic = {
-	name: `${NAMESPACE}/confetti`,
-	label: "Confetti",
-	icon: confettiIcon,
-	callback: ({ close }: { close: () => void }) => {
-		close();
-		fire();
-	},
-};
-export const confettiThreeSeconds = {
-	name: `${NAMESPACE}/confetti/5-seconds`,
-	label: "Confetti (3 seconds delay)",
-	icon: confettiIcon,
-	callback: async ({ close }: { close: () => void }) => {
-		close();
-		await new Promise((resolve) => setTimeout(resolve, 3_000));
-		fire();
-	},
-};
-
-const fire = () => {
+export const fire = () => {
 	// Left
 	confetti({
 		particleCount: 90,

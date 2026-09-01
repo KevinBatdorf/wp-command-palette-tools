@@ -111,15 +111,6 @@ export const abilitySource = ({ name, category }: Ability) => {
 	return category ? `${namespace}:${category}` : namespace;
 };
 
-export const filterAbilities = (abilities: Ability[], search: string) => {
-	const query = search.trim().toLowerCase();
-	if (!query) return abilities;
-
-	return abilities.filter(({ name, label, description }) =>
-		`${label} ${description} ${name}`.toLowerCase().includes(query),
-	);
-};
-
 export type CatalogLoader = {
 	load: () => Promise<Catalog>;
 	clear: () => void;

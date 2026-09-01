@@ -1,10 +1,16 @@
 import { createRoot } from "@wordpress/element";
 import "./palette.css";
 import { PaletteMenu } from "./palette-menu";
+import { PaletteNotices } from "./palette-notices";
 
 // Nothing prints a container for it, and Modal portals to the body anyway.
 const root = document.createElement("div");
 root.className = "wpcp-tools-palette-root";
 document.body.append(root);
 
-createRoot(root).render(<PaletteMenu />);
+createRoot(root).render(
+	<>
+		<PaletteMenu />
+		<PaletteNotices />
+	</>,
+);
