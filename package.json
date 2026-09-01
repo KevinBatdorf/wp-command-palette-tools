@@ -16,7 +16,7 @@
 		"start:hot": "wp-scripts start --hot",
 		"test:e2e": "node scripts/run-e2e.mjs",
 		"test:e2e:ui": "npx playwright test --ui",
-		"test:unit": "node --test \"src/**/*.test.ts\""
+		"test:unit": "node --test \"tests/**/*.test.ts\""
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.11",
