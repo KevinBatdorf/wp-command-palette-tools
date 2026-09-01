@@ -7,7 +7,6 @@ import {
 	catalogHash,
 	catalogState,
 	createCatalogLoader,
-	filterAbilities,
 	runHref,
 } from "../../src/lib/abilities.ts";
 
@@ -195,40 +194,6 @@ describe("catalogState", () => {
 			catalogState(catalog({ abilities: [], error: "unknown_error" })),
 			"failed",
 		);
-	});
-});
-
-describe("filterAbilities", () => {
-	const abilities = [
-		ability(),
-		ability({
-			name: "woo/update-price",
-			label: "Update product price",
-			description: "Sets the price on a product.",
-		}),
-	];
-
-	it("returns everything for a blank search", () => {
-		assert.equal(filterAbilities(abilities, "   ").length, 2);
-	});
-
-	it("matches the label, the description and the name", () => {
-		assert.deepEqual(
-			filterAbilities(abilities, "PRODUCT").map(({ name }) => name),
-			["woo/update-price"],
-		);
-		assert.deepEqual(
-			filterAbilities(abilities, "sets the price").map(({ name }) => name),
-			["woo/update-price"],
-		);
-		assert.deepEqual(
-			filterAbilities(abilities, "core/get").map(({ name }) => name),
-			["core/get-site-info"],
-		);
-	});
-
-	it("returns nothing when the search matches nothing", () => {
-		assert.deepEqual(filterAbilities(abilities, "zzz"), []);
 	});
 });
 

@@ -7,3 +7,22 @@
 	width: 100%;
 	padding-left: 8px;
 }
+
+/* cmdk withholds [cmdk-empty] whenever any other result matched. */
+/* no-prefix */
+.wpcp-tools-palette__notice {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 0 32px;
+	color: #1e1e1e;
+}
+
+/* Only the editor positions snackbars, and the palette is on every screen. */
+/* no-prefix */
+.wpcp-tools-palette-notices {
+	position: fixed;
+	bottom: 20px;
+	left: 16px;
+	z-index: 100000;
+}
