@@ -4,3 +4,6 @@ build
 /playwright-report/
 /blob-report/
 /artifacts/
+
+.claude/
+tsconfig.tsbuildinfo
