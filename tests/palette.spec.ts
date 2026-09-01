@@ -128,7 +128,8 @@ test("an ability picked once comes back under Recent", async ({
 
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get User Information/ }).click();
-	await expect(palette).toBeHidden();
+	// Picking opens the ability's form, so the palette stays up.
+	await expect(palette.getByRole("group", { name: "Fields" })).toBeVisible();
 
 	await admin.visitAdminPage("options-general.php");
 	await page.keyboard.press(`${modifier}+j`);
@@ -137,4 +138,50 @@ test("an ability picked once comes back under Recent", async ({
 	await expect(palette.getByRole("option").first()).toContainText(
 		"Get User Information",
 	);
+});
+
+test("picking an ability opens a form built from its input schema", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: /Get Site Information/ }).click();
+
+	await expect(
+		palette.getByRole("heading", { name: "Get Site Information" }),
+	).toBeVisible();
+	// Core's only input is an array of the field names it will return.
+	const fields = palette.getByRole("group", { name: "Fields" });
+	await expect(fields.getByRole("checkbox")).toHaveCount(8);
+	for (const name of ["name", "url", "wpurl", "admin_email", "version"]) {
+		// "url" is a prefix of "wpurl", so a loose name matches two rows.
+		await expect(
+			fields.getByRole("checkbox", { name, exact: true }),
+		).toBeVisible();
+	}
+
+	const language = fields.getByRole("checkbox", { name: "language" });
+	await language.check();
+	await expect(language).toBeChecked();
+});
+
+test("Escape steps back out of a form before it closes the palette", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("options-general.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: /Get User Information/ }).click();
+	await expect(palette.getByRole("group", { name: "Fields" })).toBeVisible();
+
+	await page.keyboard.press("Escape");
+	await expect(palette.getByRole("option").first()).toBeVisible();
+
+	await page.keyboard.press("Escape");
+	await expect(palette).toBeHidden();
 });
