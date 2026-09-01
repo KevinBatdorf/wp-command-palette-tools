@@ -46,11 +46,6 @@ WordPress 6.3 comes with a command pallete utility interface that lets you inter
 
 == Changelog ==
 
-= 2.0.0 - Unreleased =
-- Requires WordPress 6.9 or later
-- Fix: translations now load — the text domain has to match the plugin slug, and it did not
-- Note: the main plugin file was renamed, so WordPress deactivates the plugin when it updates. Reactivate it from the Plugins screen.
-
 = 1.0.1 - 2026-08-15 =
 - Tested up to WordPress 7.1
 - Chore: Update GitHub Actions off the deprecated Node 20 runtime
