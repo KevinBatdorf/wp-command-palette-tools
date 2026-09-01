@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	type Ability,
+	type Catalog,
 	catalogHash,
+	catalogState,
 	createCatalogLoader,
+	filterAbilities,
 	runHref,
 } from "../../src/lib/abilities.ts";
 
@@ -153,5 +156,77 @@ describe("createCatalogLoader", () => {
 		await loader.load();
 
 		assert.equal(calls, 2);
+	});
+});
+
+describe("catalogState", () => {
+	const catalog = (overrides: Partial<Catalog> = {}): Catalog => ({
+		abilities: [ability()],
+		hash: "x",
+		error: null,
+		...overrides,
+	});
+
+	it("separates nothing registered from nothing loaded", () => {
+		assert.equal(catalogState(catalog()), "ready");
+		assert.equal(catalogState(catalog({ abilities: [] })), "empty");
+	});
+
+	it("tells a missing route apart from a refused one", () => {
+		assert.equal(
+			catalogState(catalog({ abilities: [], error: "rest_no_route" })),
+			"unavailable",
+		);
+		assert.equal(
+			catalogState(catalog({ abilities: [], error: "rest_forbidden" })),
+			"forbidden",
+		);
+		assert.equal(
+			catalogState(
+				catalog({ abilities: [], error: "rest_cookie_invalid_nonce" }),
+			),
+			"forbidden",
+		);
+	});
+
+	it("falls back to a plain failure for an unrecognised code", () => {
+		assert.equal(
+			catalogState(catalog({ abilities: [], error: "unknown_error" })),
+			"failed",
+		);
+	});
+});
+
+describe("filterAbilities", () => {
+	const abilities = [
+		ability(),
+		ability({
+			name: "woo/update-price",
+			label: "Update product price",
+			description: "Sets the price on a product.",
+		}),
+	];
+
+	it("returns everything for a blank search", () => {
+		assert.equal(filterAbilities(abilities, "   ").length, 2);
+	});
+
+	it("matches the label, the description and the name", () => {
+		assert.deepEqual(
+			filterAbilities(abilities, "PRODUCT").map(({ name }) => name),
+			["woo/update-price"],
+		);
+		assert.deepEqual(
+			filterAbilities(abilities, "sets the price").map(({ name }) => name),
+			["woo/update-price"],
+		);
+		assert.deepEqual(
+			filterAbilities(abilities, "core/get").map(({ name }) => name),
+			["core/get-site-info"],
+		);
+	});
+
+	it("returns nothing when the search matches nothing", () => {
+		assert.deepEqual(filterAbilities(abilities, "zzz"), []);
 	});
 });

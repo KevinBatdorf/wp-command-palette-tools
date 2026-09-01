@@ -1,0 +1,8 @@
+/* Core lays this row out with HStack's inline flex, not with a rule. */
+/* no-prefix */
+.wpcp-tools-palette .commands-command-menu__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+}

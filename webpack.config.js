@@ -30,6 +30,7 @@ config.entry = {
 	math: "./src/commands/math/math.tsx",
 	color: "./src/commands/color/color.tsx",
 	fun: "./src/commands/fun/fun.tsx",
+	palette: "./src/palette/palette.tsx",
 };
 
 export default config;
