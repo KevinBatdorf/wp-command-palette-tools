@@ -1,6 +1,7 @@
 === Command Palette Tools ===
 Contributors:      kbat82
 Tags:              command palette, productivity, confetti, math, color
+Requires at least: 6.9
 Tested up to:      7.1
 Stable tag:        1.0.1
 License:           GPL-2.0-or-later
@@ -44,6 +45,11 @@ WordPress 6.3 comes with a command pallete utility interface that lets you inter
 3. Fire confetti with or without delay
 
 == Changelog ==
+
+= 2.0.0 - Unreleased =
+- Requires WordPress 6.9 or later
+- Fix: translations now load — the text domain has to match the plugin slug, and it did not
+- Note: the main plugin file was renamed, so WordPress deactivates the plugin when it updates. Reactivate it from the Plugins screen.
 
 = 1.0.1 - 2026-08-15 =
 - Tested up to WordPress 7.1

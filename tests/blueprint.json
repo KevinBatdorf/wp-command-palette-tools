@@ -8,7 +8,7 @@
 		},
 		{
 			"step": "activatePlugin",
-			"pluginPath": "wp-command-palette-tools/wpcp-tools.php"
+			"pluginPath": "wp-command-palette-tools/command-palette-tools.php"
 		},
 		{
 			"step": "runPHP",

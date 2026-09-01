@@ -29,7 +29,7 @@ export const doBasicMath = (search: string) => {
 				icon: calc,
 				callback: ({ close }: { close: () => void }) => {
 					copy(output);
-					fireNotice(__("Copied to clipboard!", "wpcp-tools"));
+					fireNotice(__("Copied to clipboard!", "command-palette-tools"));
 					close();
 				},
 			},
