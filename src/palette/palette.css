@@ -26,3 +26,62 @@
 	left: 16px;
 	z-index: 100000;
 }
+
+/* Core pads its command container, not the modal, so a form sits flush. */
+/* no-prefix */
+.wpcp-tools-palette__form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 16px;
+	max-height: 70vh;
+	overflow-y: auto;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__form-header {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__form-header h2 {
+	margin: 0;
+	font-size: 15px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__fieldset {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin: 0;
+	border: 1px solid #ddd;
+	padding: 12px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__fieldset legend {
+	padding: 0 4px;
+	font-weight: 600;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__row {
+	display: flex;
+	align-items: flex-end;
+	gap: 4px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__row > *:first-child {
+	flex-grow: 1;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__help {
+	margin: 0;
+	color: #757575;
+	font-size: 12px;
+}

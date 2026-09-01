@@ -26,6 +26,7 @@ import {
 	type ToolCommand,
 } from "../lib/tool-commands";
 import { fireNotice } from "../lib/wordpress";
+import { AbilityForm } from "./ability-form";
 import { NOTICE_CONTEXT } from "./palette-notices";
 import { recents } from "./recents-store";
 import { useOpenPalette } from "./use-open-palette";
@@ -107,6 +108,7 @@ export const PaletteMenu = () => {
 	const [search, setSearch] = useState("");
 	const [catalog, setCatalog] = useState<Catalog | null>(null);
 	const [recent, setRecent] = useState(recents.list);
+	const [picked, setPicked] = useState<Ability | null>(null);
 
 	const input = useRef<HTMLInputElement>(null);
 
@@ -115,13 +117,21 @@ export const PaletteMenu = () => {
 
 	const close = useCallback(() => {
 		setSearch("");
+		setPicked(null);
 		setIsOpen(false);
 	}, []);
 
+	// Modal routes Escape here, so without this a form's Escape closes it all.
+	const requestClose = useCallback(() => {
+		if (picked) return setPicked(null);
+		close();
+	}, [close, picked]);
+
 	// Modal focuses its frame, not the search field, so typing would go nowhere.
 	useEffect(() => {
+		if (picked) return;
 		input.current?.focus();
-	}, [isOpen]);
+	}, [isOpen, picked]);
 
 	// Admin-wide, so fetching on mount would hit every admin page load.
 	useEffect(() => {
@@ -144,14 +154,10 @@ export const PaletteMenu = () => {
 		[close],
 	);
 
-	const selectAbility = useCallback(
-		(ability: Ability) => {
-			setRecent(recents.remember(ability.name));
-			// Nothing runs an ability yet.
-			close();
-		},
-		[close],
-	);
+	const selectAbility = useCallback((ability: Ability) => {
+		setRecent(recents.remember(ability.name));
+		setPicked(ability);
+	}, []);
 
 	// Math and colour are computed from the query, so never scored against it.
 	const tools = useMemo<Result[]>(
@@ -205,7 +211,7 @@ export const PaletteMenu = () => {
 	const count = tools.length + recentResults.length + otherResults.length;
 
 	useEffect(() => {
-		if (!isOpen || state === null) return;
+		if (!isOpen || picked || state === null) return;
 
 		// Waits out the keystroke so a screen reader announces one total, not six.
 		const timer = setTimeout(() => {
@@ -223,7 +229,7 @@ export const PaletteMenu = () => {
 			);
 		}, 500);
 		return () => clearTimeout(timer);
-	}, [count, isOpen, state]);
+	}, [count, isOpen, picked, state]);
 
 	if (!isOpen) return null;
 
@@ -233,53 +239,61 @@ export const PaletteMenu = () => {
 		<Modal
 			className="commands-command-menu wpcp-tools-palette"
 			overlayClassName="commands-command-menu__overlay"
-			onRequestClose={close}
+			onRequestClose={requestClose}
 			__experimentalHideHeader
 			size="medium"
 			contentLabel={__("Ability palette", "command-palette-tools")}
 		>
-			<div className="commands-command-menu__container">
-				<Command
-					label={__("Search abilities", "command-palette-tools")}
-					shouldFilter={false}
-					loop
-				>
-					<div className="commands-command-menu__header">
-						<Icon
-							className="commands-command-menu__header-search-icon"
-							icon={searchIcon}
-						/>
-						<Command.Input
-							ref={input}
-							value={search}
-							onValueChange={setSearch}
-							placeholder={__("Search abilities", "command-palette-tools")}
-						/>
-					</div>
-					<Command.List label={__("Results", "command-palette-tools")}>
-						{state === null && (
-							<Command.Loading>
-								{__("Loading abilities…", "command-palette-tools")}
-							</Command.Loading>
-						)}
-						<ResultGroup
-							heading={__("Recent", "command-palette-tools")}
-							results={recentResults}
-						/>
-						<ResultGroup
-							heading={__("Tools", "command-palette-tools")}
-							results={tools}
-						/>
-						<ResultGroup
-							heading={__("Abilities", "command-palette-tools")}
-							results={otherResults}
-						/>
-						{message && (
-							<div className="wpcp-tools-palette__notice">{message}</div>
-						)}
-					</Command.List>
-				</Command>
-			</div>
+			{picked ? (
+				<AbilityForm
+					key={picked.name}
+					ability={picked}
+					onBack={() => setPicked(null)}
+				/>
+			) : (
+				<div className="commands-command-menu__container">
+					<Command
+						label={__("Search abilities", "command-palette-tools")}
+						shouldFilter={false}
+						loop
+					>
+						<div className="commands-command-menu__header">
+							<Icon
+								className="commands-command-menu__header-search-icon"
+								icon={searchIcon}
+							/>
+							<Command.Input
+								ref={input}
+								value={search}
+								onValueChange={setSearch}
+								placeholder={__("Search abilities", "command-palette-tools")}
+							/>
+						</div>
+						<Command.List label={__("Results", "command-palette-tools")}>
+							{state === null && (
+								<Command.Loading>
+									{__("Loading abilities…", "command-palette-tools")}
+								</Command.Loading>
+							)}
+							<ResultGroup
+								heading={__("Recent", "command-palette-tools")}
+								results={recentResults}
+							/>
+							<ResultGroup
+								heading={__("Tools", "command-palette-tools")}
+								results={tools}
+							/>
+							<ResultGroup
+								heading={__("Abilities", "command-palette-tools")}
+								results={otherResults}
+							/>
+							{message && (
+								<div className="wpcp-tools-palette__notice">{message}</div>
+							)}
+						</Command.List>
+					</Command>
+				</div>
+			)}
 		</Modal>
 	);
 };

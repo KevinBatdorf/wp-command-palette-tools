@@ -5,7 +5,8 @@ export type JsonSchema = {
 	title?: string;
 	description?: string;
 	properties?: Record<string, JsonSchema>;
-	items?: JsonSchema;
+	// Core keeps a draft-04 tuple as an array of schemas, one per slot.
+	items?: JsonSchema | JsonSchema[];
 	enum?: unknown[];
 	required?: string[];
 	default?: unknown;
