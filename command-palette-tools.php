@@ -21,6 +21,47 @@ function wpcp_tools_has_abilities_api()
 	return function_exists('wp_register_ability') && function_exists('wp_get_abilities');
 }
 
+function wpcp_tools_palette_enabled()
+{
+	if (defined('disable_wpcp_tools_palette')) return false;
+	if (is_network_admin() || is_user_admin()) return false;
+	if (!wpcp_tools_has_abilities_api()) return false;
+
+	return current_user_can('edit_posts');
+}
+
+add_action('admin_enqueue_scripts', function () {
+	if (!wpcp_tools_palette_enabled()) return;
+
+	$deps = require plugin_dir_path(__FILE__) . 'build/palette.asset.php';
+	wp_enqueue_script(
+		'kevinbatdorf/wpcp-tools-palette',
+		plugins_url('build/palette.js', __FILE__),
+		$deps['dependencies'],
+		$deps['version'],
+		true
+	);
+	wp_set_script_translations('kevinbatdorf/wpcp-tools-palette', 'command-palette-tools');
+	// Core's own stylesheets; without them the palette renders unstyled.
+	wp_enqueue_style(
+		'kevinbatdorf/wpcp-tools-palette',
+		plugins_url('build/palette.css', __FILE__),
+		['wp-components', 'wp-commands'],
+		$deps['version']
+	);
+	wp_style_add_data('kevinbatdorf/wpcp-tools-palette', 'rtl', 'replace');
+});
+
+add_action('admin_bar_menu', function ($wp_admin_bar) {
+	if (!is_admin() || !wpcp_tools_palette_enabled()) return;
+
+	$wp_admin_bar->add_node([
+		'id' => 'wpcp-tools-palette',
+		'title' => __('Abilities', 'command-palette-tools'),
+		'href' => '#',
+	]);
+}, 100);
+
 $wpcp_tools_assets = ['math', 'color', 'fun'];
 
 add_action('enqueue_block_editor_assets', function () use ($wpcp_tools_assets) {

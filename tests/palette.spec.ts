@@ -1,0 +1,91 @@
+import { expect, test } from "@wordpress/e2e-test-utils-playwright";
+
+const modifier = process.platform === "darwin" ? "Meta" : "Control";
+
+test.beforeEach(async ({ requestUtils }) => {
+	await requestUtils.login();
+});
+
+test("opens and closes on any admin screen", async ({ admin, page }) => {
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+
+	for (const screen of ["plugins.php", "edit.php", "options-general.php"]) {
+		await admin.visitAdminPage(screen);
+
+		await page.keyboard.press(`${modifier}+j`);
+		await expect(palette).toBeVisible();
+
+		await page.keyboard.press("Escape");
+		await expect(palette).toBeHidden();
+	}
+});
+
+test("lists the abilities core registers and narrows them by search", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await expect(palette.getByRole("option")).toHaveText([
+		/Get Site Information/,
+		/Get User Information/,
+		/Get Environment Info/,
+	]);
+
+	// Typing reaches the field only because the palette focuses it on open.
+	await page.keyboard.type("user");
+	await expect(palette.getByRole("option")).toHaveText([
+		/Get User Information/,
+	]);
+
+	await page.keyboard.type("zzz");
+	await expect(palette.getByText("No abilities found.")).toBeVisible();
+});
+
+test("a keyboard-only pass reaches every result and dismisses the palette", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("options-general.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	const options = palette.getByRole("option");
+	await expect(options.first()).toHaveAttribute("aria-selected", "true");
+
+	await page.keyboard.press("ArrowDown");
+	await expect(options.nth(1)).toHaveAttribute("aria-selected", "true");
+
+	// `loop` on the palette, so the last result wraps back to the first.
+	await page.keyboard.press("ArrowUp");
+	await page.keyboard.press("ArrowUp");
+	await expect(options.last()).toHaveAttribute("aria-selected", "true");
+
+	await page.keyboard.press("Escape");
+	await expect(palette).toBeHidden();
+});
+
+test("the admin bar item opens the palette", async ({ admin, page }) => {
+	await admin.visitAdminPage("plugins.php");
+
+	await page.locator("#wp-admin-bar-wpcp-tools-palette a").click();
+
+	await expect(
+		page.getByRole("dialog", { name: "Ability palette" }),
+	).toBeVisible();
+});
+
+test("Cmd+K still belongs to core's palette", async ({ admin, page }) => {
+	await admin.visitAdminPage("plugins.php");
+
+	await page.keyboard.press(`${modifier}+k`);
+
+	await expect(
+		page.getByRole("dialog", { name: "Command palette" }),
+	).toBeVisible();
+	await expect(
+		page.getByRole("dialog", { name: "Ability palette" }),
+	).toBeHidden();
+});

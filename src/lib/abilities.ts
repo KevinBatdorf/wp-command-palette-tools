@@ -82,6 +82,44 @@ export const catalogHash = (abilities: Ability[]) => {
 	return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 };
 
+export type CatalogState =
+	| "ready"
+	| "empty"
+	| "unavailable"
+	| "forbidden"
+	| "failed";
+
+const FORBIDDEN_CODES = new Set([
+	"rest_forbidden",
+	"rest_cannot_view",
+	"rest_cookie_invalid_nonce",
+]);
+
+export const catalogState = (catalog: Catalog): CatalogState => {
+	if (catalog.error === "rest_no_route") return "unavailable";
+	if (catalog.error) {
+		return FORBIDDEN_CODES.has(catalog.error) ? "forbidden" : "failed";
+	}
+	return catalog.abilities.length ? "ready" : "empty";
+};
+
+// The listing carries no namespace field of its own.
+export const abilitySource = ({ name, category }: Ability) => {
+	const [namespace] = name.split("/");
+	if (!namespace || namespace === name) return category;
+
+	return category ? `${namespace}:${category}` : namespace;
+};
+
+export const filterAbilities = (abilities: Ability[], search: string) => {
+	const query = search.trim().toLowerCase();
+	if (!query) return abilities;
+
+	return abilities.filter(({ name, label, description }) =>
+		`${label} ${description} ${name}`.toLowerCase().includes(query),
+	);
+};
+
 export type CatalogLoader = {
 	load: () => Promise<Catalog>;
 	clear: () => void;
