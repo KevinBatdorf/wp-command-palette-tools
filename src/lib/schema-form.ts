@@ -397,7 +397,7 @@ export const initialInput = (form: Form): unknown => {
 };
 
 // `false` and `0` are answers; only an absent one is unfilled.
-const isBlank = (value: unknown) =>
+export const isBlank = (value: unknown) =>
 	value === undefined || value === null || value === "";
 
 const matchesPattern = (pattern: string, value: string) => {
