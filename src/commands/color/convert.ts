@@ -54,7 +54,7 @@ export const colorConversions = (search: string) => {
 				name: `${NAMESPACE}/color/convert/${key}`,
 				// need to include the search in the label so it shows up in the search results
 				label: sprintf(
-					__("%s to %s: %s", "wpcp-tools"),
+					__("%s to %s: %s", "command-palette-tools"),
 					search,
 					value.label,
 					value.value ?? "",
@@ -62,7 +62,7 @@ export const colorConversions = (search: string) => {
 				icon: colorIcon,
 				callback: ({ close }: { close: () => void }) => {
 					copy(value.value ?? "");
-					fireNotice(__("Copied to clipboard!", "wpcp-tools"));
+					fireNotice(__("Copied to clipboard!", "command-palette-tools"));
 					close();
 				},
 			})),
