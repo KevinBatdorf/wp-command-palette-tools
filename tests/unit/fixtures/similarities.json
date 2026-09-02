@@ -1,0 +1,37 @@
+{
+	"model": "Xenova/all-MiniLM-L6-v2",
+	"revision": "751bff37182d3f1213fa05d7196b954e230abad9",
+	"embedded": "`${label}. ${description}`",
+	"similarities": {
+		"make my shop items cheaper": {
+			"core/get-site-info": -0.116,
+			"core/get-user-info": -0.086,
+			"core/get-environment-info": -0.063,
+			"woo/update-price": 0.434
+		},
+		"who am i logged in as": {
+			"core/get-site-info": 0.102,
+			"core/get-user-info": 0.485,
+			"core/get-environment-info": 0.123,
+			"woo/update-price": -0.026
+		},
+		"what php version": {
+			"core/get-site-info": 0.189,
+			"core/get-user-info": 0.121,
+			"core/get-environment-info": 0.554,
+			"woo/update-price": 0.077
+		},
+		"pizza recipe": {
+			"core/get-site-info": -0.02,
+			"core/get-user-info": 0.001,
+			"core/get-environment-info": 0.006,
+			"woo/update-price": 0.013
+		},
+		"price": {
+			"core/get-site-info": -0.054,
+			"core/get-user-info": 0.064,
+			"core/get-environment-info": -0.005,
+			"woo/update-price": 0.349
+		}
+	}
+}

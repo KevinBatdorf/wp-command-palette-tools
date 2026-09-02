@@ -18,7 +18,8 @@ import {
 	catalogState,
 } from "../lib/abilities";
 import { abilityCatalog } from "../lib/ability-catalog";
-import { rank } from "../lib/rank";
+import { createEmbedder } from "../lib/embed";
+import { rank, rankFused, type Similarity } from "../lib/rank";
 import {
 	colorTools,
 	funTools,
@@ -31,6 +32,11 @@ import { NOTICE_CONTEXT } from "./palette-notices";
 import { recents } from "./recents-store";
 import { useDoorwayCommand } from "./use-doorway-command";
 import { useOpenPalette } from "./use-open-palette";
+
+const embedder = createEmbedder();
+
+// Long enough that a half-typed word is never what gets embedded.
+const EMBED_DEBOUNCE = 150;
 
 type Result = {
 	id: string;
@@ -110,6 +116,10 @@ export const PaletteMenu = () => {
 	const [catalog, setCatalog] = useState<Catalog | null>(null);
 	const [recent, setRecent] = useState(recents.list);
 	const [picked, setPicked] = useState<Ability | null>(null);
+	const [semantic, setSemantic] = useState<{
+		query: string;
+		similarity: Similarity;
+	} | null>(null);
 
 	const input = useRef<HTMLInputElement>(null);
 
@@ -148,6 +158,28 @@ export const PaletteMenu = () => {
 			stale = true;
 		};
 	}, [isOpen]);
+
+	useEffect(() => {
+		const query = search.trim();
+		if (!isOpen || !query || !catalog?.abilities.length) return;
+
+		let stale = false;
+		const timer = setTimeout(() => {
+			embedder
+				.ready(catalog.abilities, catalog.hash)
+				.then(() => embedder.similarity(query))
+				.then((similarity) => {
+					if (!stale) setSemantic({ query, similarity });
+				})
+				// A model that will not load leaves the lexical ranking in place.
+				.catch(() => {});
+		}, EMBED_DEBOUNCE);
+
+		return () => {
+			stale = true;
+			clearTimeout(timer);
+		};
+	}, [catalog, isOpen, search]);
 
 	const runTool = useCallback(
 		(tool: ToolCommand) => {
@@ -192,9 +224,13 @@ export const PaletteMenu = () => {
 		[catalog, selectAbility],
 	);
 
+	// Anything but the query it was built for would score the wrong list.
+	const similarity =
+		semantic?.query === search.trim() ? semantic.similarity : undefined;
+
 	const ranked = useMemo(
-		() => rank(abilities, search, recent),
-		[abilities, search, recent],
+		() => rankFused(abilities, search, { recents: recent, similarity }),
+		[abilities, search, recent, similarity],
 	);
 
 	// Once something is typed, recency is only a tie-break in the ranking.

@@ -7,6 +7,7 @@
 	"license": "GPL-2.0-or-later",
 	"main": "build/index.js",
 	"scripts": {
+		"prebuild": "node scripts/fetch-assets.mjs",
 		"build": "tsc && biome check && wp-scripts build",
 		"lint": "biome check",
 		"lint:fix": "biome check --write",
@@ -31,6 +32,7 @@
 		"typescript": "^7.0.2"
 	},
 	"dependencies": {
+		"@huggingface/transformers": "^3.8.1",
 		"@tailwindcss/postcss": "^4.3.3",
 		"@wordpress/a11y": "^4.54.0",
 		"@wordpress/api-fetch": "^7.54.0",

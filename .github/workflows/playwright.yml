@@ -65,6 +65,12 @@ jobs:
       if: steps.pw-cache.outputs.cache-hit == 'true'
       run: npx playwright install-deps
 
+    - name: Cache the bundled model
+      uses: actions/cache@v6
+      with:
+        path: models
+        key: wpcp-model-${{ hashFiles('scripts/assets.lock.json') }}
+
     - name: Build project
       run: npm run build
       env:

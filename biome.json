@@ -16,6 +16,8 @@
 			"!**/.cache",
 			"!**/playwright-report",
 			"!**/artifacts",
+			"!**/models",
+			"!**/ort",
 			"!**/test-results",
 			"!**/wordpress-org",
 			"!**/editor.css"
