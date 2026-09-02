@@ -21,13 +21,18 @@ function wpcp_tools_has_abilities_api()
 	return function_exists('wp_register_ability') && function_exists('wp_get_abilities');
 }
 
+if (wpcp_tools_has_abilities_api()) {
+	require_once plugin_dir_path(__FILE__) . 'includes/abilities.php';
+}
+
 function wpcp_tools_palette_enabled()
 {
 	if (defined('disable_wpcp_tools_palette')) return false;
 	if (is_network_admin() || is_user_admin()) return false;
 	if (!wpcp_tools_has_abilities_api()) return false;
 
-	return current_user_can('edit_posts');
+	// Every ability this ships asks for manage_options, so the palette does too.
+	return current_user_can('manage_options');
 }
 
 add_action('admin_enqueue_scripts', function () {

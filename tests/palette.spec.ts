@@ -2,6 +2,26 @@ import { expect, test } from "@wordpress/e2e-test-utils-playwright";
 
 const modifier = process.platform === "darwin" ? "Meta" : "Control";
 
+// Core's three plus the thirteen this plugin bundles.
+const STOCK_ABILITIES = [
+	"Get Site Information",
+	"Get User Information",
+	"Get Environment Info",
+	"List scheduled events",
+	"Run a scheduled event now",
+	"List autoloaded options",
+	"List unattached media",
+	"Delete expired transients",
+	"Empty the trash",
+	"Merge two terms",
+	"Reassign posts to another author",
+	"Close comments on old posts",
+	"Publish posts that missed their schedule",
+	"Find and replace across posts",
+	"List abilities",
+	"Describe an ability",
+];
+
 test.beforeEach(async ({ requestUtils }) => {
 	await requestUtils.login();
 });
@@ -20,7 +40,7 @@ test("opens and closes on any admin screen", async ({ admin, page }) => {
 	}
 });
 
-test("lists the abilities core registers and narrows them by search", async ({
+test("lists every ability a stock site registers and narrows them by search", async ({
 	admin,
 	page,
 }) => {
@@ -28,20 +48,34 @@ test("lists the abilities core registers and narrows them by search", async ({
 	await page.keyboard.press(`${modifier}+j`);
 
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
-	await expect(palette.getByRole("option")).toHaveText([
-		/Get Site Information/,
-		/Get User Information/,
-		/Get Environment Info/,
-	]);
+	// Order is the catalog's, so the set is asserted rather than the sequence.
+	await expect(palette.getByRole("option")).toHaveCount(STOCK_ABILITIES.length);
+	for (const label of STOCK_ABILITIES) {
+		await expect(palette.getByRole("option", { name: label })).toBeVisible();
+	}
 
 	// Typing reaches the field only because the palette focuses it on open.
-	await page.keyboard.type("user");
+	await page.keyboard.type("environment");
 	await expect(palette.getByRole("option")).toHaveText([
-		/Get User Information/,
+		/Get Environment Info/,
 	]);
 
 	await page.keyboard.type("zzz");
 	await expect(palette.getByText("No results found.")).toBeVisible();
+});
+
+test("a label beats a description that happens to share the word", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+	await page.keyboard.type("user");
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await expect(palette.getByRole("option").first()).toContainText(
+		"Get User Information",
+	);
 });
 
 test("a keyboard-only pass reaches every result and dismisses the palette", async ({
