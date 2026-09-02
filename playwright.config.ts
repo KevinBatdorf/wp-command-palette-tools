@@ -51,6 +51,8 @@ export default defineConfig({
 		command: `wp-playground-cli server --auto-mount --blueprint=${bp} --wp=${WP_VERSION} --port=${portMap[bp]} --internal-cookie-store=true --login=false`,
 		url: `http://127.0.0.1:${portMap[bp]}`,
 		reuseExistingServer: false,
+		// A blueprint that installs a plugin from w.org outruns the 60s default.
+		timeout: 180_000,
 	})),
 	projects: active.map((p) => ({
 		name: p.name,

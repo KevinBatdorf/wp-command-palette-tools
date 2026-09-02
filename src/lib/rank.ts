@@ -101,8 +101,8 @@ export type Similarity = (id: string) => number;
 
 const LEXICAL_MAX = LABEL_WEIGHT * EXACT;
 
-// Measured on MiniLM: a real match scores 0.3+, a query about nothing under 0.2.
-const SEMANTIC_FLOOR = 0.25;
+// Lowest floor with no false positives; higher loses real matches.
+const SEMANTIC_FLOOR = 0.2;
 
 // Under half, so a label match always outranks a merely related description.
 const SEMANTIC_SHARE = 0.3;
@@ -113,7 +113,12 @@ export const rankFused = <T extends Rankable>(
 	{
 		recents = [],
 		similarity,
-	}: { recents?: readonly string[]; similarity?: Similarity } = {},
+		floor = SEMANTIC_FLOOR,
+	}: {
+		recents?: readonly string[];
+		similarity?: Similarity;
+		floor?: number;
+	} = {},
 ) => {
 	// Keystroke one and a model that never loaded both arrive with no vectors.
 	if (!similarity) return rank(items, query, recents);
@@ -125,7 +130,7 @@ export const rankFused = <T extends Rankable>(
 		const lexical = score(item, query) / LEXICAL_MAX;
 		const semantic = similarity(item.id);
 		// Lexical scores zero for a query sharing no word, so cosine must admit it.
-		if (!lexical && semantic < SEMANTIC_FLOOR) continue;
+		if (!lexical && semantic < floor) continue;
 
 		const fused =
 			(1 - SEMANTIC_SHARE) * lexical + SEMANTIC_SHARE * Math.max(0, semantic);

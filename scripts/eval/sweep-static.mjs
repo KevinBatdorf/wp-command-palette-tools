@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { loadCases, loadCatalog, score } from "./score.mjs";
+import { loadCases, loadCatalog, sweep } from "./score.mjs";
 import { staticEmbedder } from "./static-embedder.mjs";
 
 const { embed, label } = await staticEmbedder({
@@ -7,7 +7,7 @@ const { embed, label } = await staticEmbedder({
 	int8: process.argv[3] === "int8",
 });
 
-await score({
+await sweep({
 	label,
 	catalog: loadCatalog(process.argv[4] ?? "catalog.json"),
 	cases: loadCases(),

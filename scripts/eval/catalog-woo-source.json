@@ -78,40 +78,5 @@
 		"name": "wpcp/describe-ability",
 		"label": "Describe an ability",
 		"description": "Everything one ability declares: what it takes, what it returns, whether it is destructive, and whether you may run it."
-	},
-	{
-		"name": "woocommerce/order-add-note",
-		"label": "Add order note",
-		"description": "Add a note to an order."
-	},
-	{
-		"name": "woocommerce/order-update-status",
-		"label": "Update order status",
-		"description": "Update an order status."
-	},
-	{
-		"name": "woocommerce/orders-query",
-		"label": "Query orders",
-		"description": "Find orders by ID or common order filters."
-	},
-	{
-		"name": "woocommerce/product-create",
-		"label": "Create product",
-		"description": "Create a product using supported catalog fields."
-	},
-	{
-		"name": "woocommerce/product-delete",
-		"label": "Delete product",
-		"description": "Delete, trash, or restore a product."
-	},
-	{
-		"name": "woocommerce/product-update",
-		"label": "Update product",
-		"description": "Update an existing product using supported catalog fields."
-	},
-	{
-		"name": "woocommerce/products-query",
-		"label": "Query products",
-		"description": "Find products by ID or common catalog filters."
 	}
 ]
