@@ -1,0 +1,104 @@
+[
+	{ "query": "what is this website called", "expect": "core/get-site-info" },
+	{
+		"query": "what address does the site live at",
+		"expect": "core/get-site-info"
+	},
+	{ "query": "who am i logged in as", "expect": "core/get-user-info" },
+	{ "query": "what account am i using", "expect": "core/get-user-info" },
+	{ "query": "what php version", "expect": "core/get-environment-info" },
+	{
+		"query": "which release of wordpress is this",
+		"expect": "core/get-environment-info"
+	},
+	{
+		"query": "what background jobs are queued",
+		"expect": "wpcp/list-cron-events"
+	},
+	{
+		"query": "when does the next timer fire",
+		"expect": "wpcp/list-cron-events"
+	},
+	{ "query": "fire that job right now", "expect": "wpcp/run-cron-event" },
+	{
+		"query": "trigger the queued task immediately",
+		"expect": "wpcp/run-cron-event"
+	},
+	{
+		"query": "why is my site slow on every request",
+		"expect": "wpcp/list-autoloaded-options"
+	},
+	{
+		"query": "what is bloating the options table",
+		"expect": "wpcp/list-autoloaded-options"
+	},
+	{
+		"query": "which uploads is nothing using",
+		"expect": "wpcp/list-unattached-media"
+	},
+	{
+		"query": "find orphaned files in the library",
+		"expect": "wpcp/list-unattached-media"
+	},
+	{
+		"query": "clear out stale cached rows",
+		"expect": "wpcp/delete-expired-transients"
+	},
+	{
+		"query": "get rid of old cache entries",
+		"expect": "wpcp/delete-expired-transients"
+	},
+	{
+		"query": "get rid of deleted stuff for good",
+		"expect": "wpcp/empty-trash"
+	},
+	{
+		"query": "permanently remove what i threw away",
+		"expect": "wpcp/empty-trash"
+	},
+	{ "query": "combine two categories into one", "expect": "wpcp/merge-terms" },
+	{ "query": "fold one tag into another", "expect": "wpcp/merge-terms" },
+	{
+		"query": "give one writer's posts to somebody else",
+		"expect": "wpcp/reassign-author"
+	},
+	{
+		"query": "change who is credited for these articles",
+		"expect": "wpcp/reassign-author"
+	},
+	{
+		"query": "stop discussion on older articles",
+		"expect": "wpcp/close-comments"
+	},
+	{
+		"query": "turn off replies for anything ancient",
+		"expect": "wpcp/close-comments"
+	},
+	{
+		"query": "some posts never went live on their date",
+		"expect": "wpcp/publish-missed-schedules"
+	},
+	{
+		"query": "drafts stuck past their publish time",
+		"expect": "wpcp/publish-missed-schedules"
+	},
+	{
+		"query": "swap a word everywhere",
+		"expect": "wpcp/search-replace-content"
+	},
+	{
+		"query": "change a phrase across all my content",
+		"expect": "wpcp/search-replace-content"
+	},
+	{ "query": "what can this thing do", "expect": "wpcp/list-abilities" },
+	{
+		"query": "explain what one of these does",
+		"expect": "wpcp/describe-ability"
+	},
+	{ "query": "pizza recipe", "expect": null },
+	{ "query": "how do i bake bread", "expect": null },
+	{ "query": "xylophone", "expect": null },
+	{ "query": "what is the weather tomorrow", "expect": null },
+	{ "query": "book a flight to tokyo", "expect": null },
+	{ "query": "what is the capital of france", "expect": null }
+]
