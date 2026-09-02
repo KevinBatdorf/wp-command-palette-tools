@@ -85,3 +85,28 @@
 	color: #757575;
 	font-size: 12px;
 }
+
+/* no-prefix */
+.wpcp-tools-palette__actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__result-heading {
+	margin: 0 0 8px;
+	font-size: 13px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__result {
+	margin: 0;
+	max-height: 240px;
+	overflow: auto;
+	padding: 8px;
+	background: #f0f0f0;
+	font-size: 12px;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}

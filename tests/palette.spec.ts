@@ -185,3 +185,24 @@ test("Escape steps back out of a form before it closes the palette", async ({
 	await page.keyboard.press("Escape");
 	await expect(palette).toBeHidden();
 });
+
+test("a readonly ability runs without a confirm and shows what came back", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: /Get Site Information/ }).click();
+
+	const fields = palette.getByRole("group", { name: "Fields" });
+	await fields.getByRole("checkbox", { name: "url", exact: true }).check();
+
+	await palette.getByRole("button", { name: "Run", exact: true }).click();
+
+	// Readonly, so core answers this one on GET alone.
+	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
+	await expect(palette.getByText('"url"')).toBeVisible();
+	await expect(palette.getByText(/127\.0\.0\.1/)).toBeVisible();
+});

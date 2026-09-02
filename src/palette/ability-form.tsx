@@ -1,3 +1,5 @@
+import { speak } from "@wordpress/a11y";
+import apiFetch from "@wordpress/api-fetch";
 import {
 	Button,
 	CheckboxControl,
@@ -15,7 +17,15 @@ import {
 } from "@wordpress/element";
 import { __, _n, isRTL, sprintf } from "@wordpress/i18n";
 import { chevronLeft, chevronRight, closeSmall } from "@wordpress/icons";
-import type { Ability } from "../lib/abilities";
+import { type Ability, runHref } from "../lib/abilities";
+import {
+	type ConfirmKind,
+	coerceInput,
+	confirmKind,
+	hasUnfillable,
+	runFailure,
+	runRequest,
+} from "../lib/ability-run";
 import {
 	emptyValue,
 	type Field,
@@ -360,6 +370,40 @@ const FieldRow = ({
 	}
 };
 
+type RunState =
+	| { status: "idle" }
+	| { status: "confirming" }
+	| { status: "running" }
+	| { status: "done"; result: unknown }
+	| { status: "failed"; message: string };
+
+const IDLE: RunState = { status: "idle" };
+
+const confirmText = (kind: ConfirmKind) =>
+	kind === "destructive"
+		? __(
+				"This ability can delete data, and running it cannot be undone.",
+				"command-palette-tools",
+			)
+		: __("This ability makes changes to your site.", "command-palette-tools");
+
+const RunResult = ({ result }: { result: unknown }) => (
+	<div>
+		<h3 className="wpcp-tools-palette__result-heading">
+			{__("Result", "command-palette-tools")}
+		</h3>
+		{result === null || result === undefined ? (
+			<p className="wpcp-tools-palette__help">
+				{__("The ability ran and returned nothing.", "command-palette-tools")}
+			</p>
+		) : (
+			<pre className="wpcp-tools-palette__result">
+				{typeof result === "string" ? result : JSON.stringify(result, null, 2)}
+			</pre>
+		)}
+	</div>
+);
+
 export const AbilityForm = ({
 	ability,
 	onBack,
@@ -372,21 +416,73 @@ export const AbilityForm = ({
 		[ability],
 	);
 	const [input, setInput] = useState<unknown>(() => initialInput(form));
+	const [run, setRun] = useState<RunState>(IDLE);
 	const errors = fieldErrors(form, input);
-	const container = useRef<HTMLDivElement>(null);
+	const container = useRef<HTMLFormElement>(null);
+	const confirmRun = useRef<HTMLButtonElement>(null);
+	const outcome = useRef<HTMLDivElement>(null);
+
+	const confirm = confirmKind(ability);
+	const runnable = !form.unsupported && !!runHref(ability);
+	const blocked = !!Object.keys(errors).length || hasUnfillable(form);
 
 	useEffect(() => {
 		container.current?.querySelector<HTMLElement>("input, select")?.focus();
 	}, []);
 
-	const set = useCallback<Setter>(
-		(path, value) =>
-			setInput((current: unknown) => writeAt(current, path, value)),
-		[],
-	);
+	// Without this a second Enter re-submits the form instead of confirming.
+	useEffect(() => {
+		if (run.status === "confirming") confirmRun.current?.focus();
+	}, [run.status]);
+
+	// The form scrolls, so an outcome appended below it can arrive off-screen.
+	useEffect(() => {
+		if (run.status === "done" || run.status === "failed") {
+			outcome.current?.scrollIntoView({ block: "nearest" });
+		}
+	}, [run.status]);
+
+	const set = useCallback<Setter>((path, value) => {
+		setInput((current: unknown) => writeAt(current, path, value));
+		// A result shown for input since changed is a lie. A run in flight keeps its own.
+		setRun((current) => (current.status === "running" ? current : IDLE));
+	}, []);
+
+	const send = useCallback(async () => {
+		const request = runRequest(ability, coerceInput(form, input));
+		if (!request) return;
+
+		setRun({ status: "running" });
+		try {
+			const result = await apiFetch<unknown>(request);
+			setRun({ status: "done", result });
+			speak(__("The ability ran.", "command-palette-tools"));
+		} catch (error) {
+			// The notice announces itself, so nothing is spoken here.
+			setRun({
+				status: "failed",
+				message:
+					runFailure(error).message ??
+					__("The ability could not be run.", "command-palette-tools"),
+			});
+		}
+	}, [ability, form, input]);
+
+	const submit = (event: React.FormEvent) => {
+		event.preventDefault();
+		// A form with no submit button at all still submits on Enter.
+		if (!runnable || blocked) return;
+		if (confirm === "none") return void send();
+
+		setRun({ status: "confirming" });
+	};
 
 	return (
-		<div className="wpcp-tools-palette__form" ref={container}>
+		<form
+			className="wpcp-tools-palette__form"
+			ref={container}
+			onSubmit={submit}
+		>
 			<div className="wpcp-tools-palette__form-header">
 				<Button
 					icon={isRTL() ? chevronRight : chevronLeft}
@@ -418,6 +514,59 @@ export const AbilityForm = ({
 					{__("This ability takes no input.", "command-palette-tools")}
 				</p>
 			)}
-		</div>
+			{!runHref(ability) && (
+				<Notice status="warning" isDismissible={false}>
+					{__("This ability cannot be run from here.", "command-palette-tools")}
+				</Notice>
+			)}
+			{runnable && (
+				<div className="wpcp-tools-palette__actions">
+					<Button
+						variant="primary"
+						type="submit"
+						accessibleWhenDisabled
+						disabled={blocked || run.status === "running"}
+						isBusy={run.status === "running"}
+					>
+						{__("Run", "command-palette-tools")}
+					</Button>
+				</div>
+			)}
+			{run.status === "confirming" && (
+				<Notice
+					status={confirm === "destructive" ? "error" : "warning"}
+					isDismissible={false}
+					spokenMessage={confirmText(confirm)}
+				>
+					<p>{confirmText(confirm)}</p>
+					<div className="wpcp-tools-palette__actions">
+						<Button
+							ref={confirmRun}
+							variant="primary"
+							onClick={() => void send()}
+						>
+							{confirm === "destructive"
+								? __("Run anyway", "command-palette-tools")
+								: __("Yes, run it", "command-palette-tools")}
+						</Button>
+						<Button variant="tertiary" onClick={() => setRun(IDLE)}>
+							{__("Cancel", "command-palette-tools")}
+						</Button>
+					</div>
+				</Notice>
+			)}
+			{run.status === "done" && (
+				<div ref={outcome}>
+					<RunResult result={run.result} />
+				</div>
+			)}
+			{run.status === "failed" && (
+				<div ref={outcome}>
+					<Notice status="error" isDismissible={false}>
+						{run.message}
+					</Notice>
+				</div>
+			)}
+		</form>
 	);
 };
