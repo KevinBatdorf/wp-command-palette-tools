@@ -50,6 +50,9 @@ function wpcp_tools_enqueue_palette()
 	// Only wp-admin prints `userSettings`, and recents are stored per user.
 	wp_localize_script('kevinbatdorf/wpcp-tools-palette', 'wpcpTools', [
 		'uid' => (string) get_current_user_id(),
+		// transformers.js resolves both against a URL, so trailing slashes matter.
+		'modelPath' => plugins_url('models/', __FILE__),
+		'ortPath' => plugins_url('ort/', __FILE__),
 	]);
 	wp_set_script_translations('kevinbatdorf/wpcp-tools-palette', 'command-palette-tools');
 	// Core's own stylesheets; without them the palette renders unstyled.

@@ -1,5 +1,3 @@
-// Lexical only: ranking has to work with no model on the page.
-
 export type Rankable = {
 	id: string;
 	label: string;
@@ -64,6 +62,18 @@ export const score = (item: Rankable, query: string) => {
 	return total / terms.length;
 };
 
+type Scored<T> = { item: T; score: number };
+
+const ordered = <T extends Rankable>(scored: Scored<T>[]) =>
+	scored
+		.sort(
+			(a, b) =>
+				b.score - a.score ||
+				a.item.label.length - b.item.label.length ||
+				a.item.label.localeCompare(b.item.label),
+		)
+		.map((entry) => entry.item);
+
 export const rank = <T extends Rankable>(
 	items: T[],
 	query: string,
@@ -72,7 +82,7 @@ export const rank = <T extends Rankable>(
 	if (!words(query).length) return [...items];
 
 	const recent = new Set(recents);
-	const scored: { item: T; score: number }[] = [];
+	const scored: Scored<T>[] = [];
 	for (const item of items) {
 		const base = score(item, query);
 		// Added after the filter, so recency never rescues a non-match.
@@ -84,12 +94,51 @@ export const rank = <T extends Rankable>(
 		}
 	}
 
-	return scored
-		.sort(
-			(a, b) =>
-				b.score - a.score ||
-				a.item.label.length - b.item.label.length ||
-				a.item.label.localeCompare(b.item.label),
-		)
-		.map((entry) => entry.item);
+	return ordered(scored);
+};
+
+export type Similarity = (id: string) => number;
+
+const LEXICAL_MAX = LABEL_WEIGHT * EXACT;
+
+// Lower surfaces more real matches; on a bigger catalog it also surfaces noise.
+const SEMANTIC_FLOOR = 0.2;
+
+// Under half, so a label match always outranks a merely related description.
+const SEMANTIC_SHARE = 0.3;
+
+export const rankFused = <T extends Rankable>(
+	items: T[],
+	query: string,
+	{
+		recents = [],
+		similarity,
+		floor = SEMANTIC_FLOOR,
+	}: {
+		recents?: readonly string[];
+		similarity?: Similarity;
+		floor?: number;
+	} = {},
+) => {
+	// Keystroke one and a model that never loaded both arrive with no vectors.
+	if (!similarity) return rank(items, query, recents);
+	if (!words(query).length) return [...items];
+
+	const recent = new Set(recents);
+	const scored: Scored<T>[] = [];
+	for (const item of items) {
+		const lexical = score(item, query) / LEXICAL_MAX;
+		const semantic = similarity(item.id);
+		// Lexical scores zero for a query sharing no word, so cosine must admit it.
+		if (!lexical && semantic < floor) continue;
+
+		const fused =
+			(1 - SEMANTIC_SHARE) * lexical + SEMANTIC_SHARE * Math.max(0, semantic);
+		scored.push({
+			item,
+			score: fused + (recent.has(item.id) ? RECENT_BONUS / LEXICAL_MAX : 0),
+		});
+	}
+
+	return ordered(scored);
 };

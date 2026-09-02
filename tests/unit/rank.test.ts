@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { type Rankable, rank, score } from "../../src/lib/rank.ts";
+import { type Rankable, rank, rankFused, score } from "../../src/lib/rank.ts";
+import similarityFixture from "./fixtures/similarities.json" with {
+	type: "json",
+};
 
 // Close to what core and a plugin actually register.
 const catalog: Rankable[] = [
@@ -92,5 +95,64 @@ describe("score", () => {
 		const exact = { id: "a", label: "Confetti" };
 		const partial = { id: "b", label: "Confetti (3 seconds delay)" };
 		assert.ok(score(exact, "confetti") > score(partial, "confetti"));
+	});
+});
+
+describe("rankFused", () => {
+	// Real MiniLM output for this catalog, not numbers invented for the test.
+	const { similarities } = similarityFixture;
+	const of = (query: keyof typeof similarities): ((id: string) => number) => {
+		const row: Record<string, number> = similarities[query];
+		return (id) => row[id] ?? 0;
+	};
+
+	it("finds the ability a query shares no word with", () => {
+		const results = rankFused(catalog, "make my shop items cheaper", {
+			similarity: of("make my shop items cheaper"),
+		});
+		assert.equal(results[0].id, "woo/update-price");
+
+		assert.equal(
+			rankFused(catalog, "who am i logged in as", {
+				similarity: of("who am i logged in as"),
+			})[0].id,
+			"core/get-user-info",
+		);
+	});
+
+	it("answers nothing for a query the catalog has no ability for", () => {
+		assert.deepEqual(
+			ids(
+				rankFused(catalog, "pizza recipe", { similarity: of("pizza recipe") }),
+			),
+			[],
+		);
+	});
+
+	it("leaves the lexical order alone when no vectors arrived", () => {
+		for (const query of ["user", "price", "php version", "get info", "site"]) {
+			assert.deepEqual(
+				ids(rankFused(catalog, query)),
+				ids(rank(catalog, query)),
+				query,
+			);
+		}
+	});
+
+	it("keeps a label match ahead of a better cosine", () => {
+		// Every other ability is scored a near-perfect match on purpose.
+		const results = rankFused(catalog, "price", {
+			similarity: (id) => (id === "woo/update-price" ? 0.349 : 0.95),
+		});
+		assert.equal(results[0].id, "woo/update-price");
+	});
+
+	it("still lets recency break a tie", () => {
+		const tied = ["core/get-site-info", "core/get-user-info"];
+		const results = rankFused(catalog, "information", {
+			recents: ["core/get-user-info"],
+			similarity: () => 0,
+		});
+		assert.deepEqual(ids(results).slice(0, 2), tied.toReversed());
 	});
 });
