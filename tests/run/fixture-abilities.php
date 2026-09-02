@@ -52,6 +52,45 @@ add_action('wp_abilities_api_init', function () {
 		],
 	]);
 
+	// A discriminated union, which is how WooCommerce writes its product schemas.
+	wp_register_ability('wpcp-test/book-a-slot', [
+		'label' => 'Book Test Slot',
+		'description' => 'Takes one of two shapes depending on what is being booked.',
+		'category' => 'site',
+		'input_schema' => [
+			'type' => 'object',
+			'oneOf' => [
+				[
+					'type' => 'object',
+					'properties' => [
+						'kind' => ['type' => 'string', 'enum' => ['room']],
+						'name' => ['type' => 'string', 'description' => 'Who it is for.'],
+						'floor' => ['type' => 'integer'],
+					],
+					'required' => ['kind', 'name'],
+					'additionalProperties' => false,
+				],
+				[
+					'type' => 'object',
+					'properties' => [
+						'kind' => ['type' => 'string', 'enum' => ['desk']],
+						'name' => ['type' => 'string', 'description' => 'Who it is for.'],
+						'standing' => ['type' => 'boolean'],
+					],
+					'required' => ['kind', 'name'],
+					'additionalProperties' => false,
+				],
+			],
+		],
+		'output_schema' => ['type' => 'object'],
+		'execute_callback' => fn($input) => ['booked' => $input],
+		'permission_callback' => fn() => current_user_can('manage_options'),
+		'meta' => [
+			'public' => true,
+			'annotations' => ['readonly' => false, 'destructive' => false, 'idempotent' => false],
+		],
+	]);
+
 	// No input schema at all is how an ability says it takes none.
 	wp_register_ability('wpcp-test/always-fails', [
 		'label' => 'Fail Test Run',

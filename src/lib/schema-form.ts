@@ -67,11 +67,29 @@ export type Field = Control & {
 	defaultValue?: unknown;
 };
 
+// One arm of a top-level `oneOf`. A null name is the component's cue to number it.
+export type Branch = {
+	key: string;
+	name: string | null;
+	// What the discriminator holds for this arm, absent when it pins nothing.
+	value?: unknown;
+	form: Form;
+};
+
+export type Union = {
+	discriminator: string | null;
+	// The discriminator humanized, since a property name has no other label.
+	label: string | null;
+	branches: Branch[];
+};
+
 export type Form = {
 	fields: Field[];
 	// A schema no form can show, as opposed to one field that cannot.
 	unsupported: UnsupportedReason | null;
 	defaultValue?: unknown;
+	// Present instead of fields: pick an arm, then fill that arm's own form.
+	union?: Union;
 };
 
 // Stands in for a row index until a row exists to number.
@@ -263,6 +281,189 @@ const toField = (
 	}
 };
 
+const pinned = (schema: unknown): unknown => {
+	if (!schema || typeof schema !== "object") return undefined;
+	const { enum: values } = schema as JsonSchema;
+
+	return Array.isArray(values) && values.length === 1 ? values[0] : undefined;
+};
+
+// An arm must declare type object, the same bar a nested object property clears.
+const objectBranches = (value: unknown): JsonSchema[] | null => {
+	if (!Array.isArray(value) || value.length < 2) return null;
+
+	const branches = value.filter(
+		(branch): branch is JsonSchema =>
+			!!branch &&
+			typeof branch === "object" &&
+			(branch as JsonSchema).type === "object" &&
+			!!(branch as JsonSchema).properties,
+	);
+
+	return branches.length === value.length ? branches : null;
+};
+
+// Pinned to one value in at least two arms, and never the same value twice.
+const findDiscriminator = (branches: JsonSchema[]): string | null => {
+	const pinnedBy = new Map<string, unknown[]>();
+
+	for (const branch of branches) {
+		for (const [name, child] of Object.entries(branch.properties ?? {})) {
+			const value = pinned(child);
+			if (value === undefined) continue;
+
+			pinnedBy.set(name, [...(pinnedBy.get(name) ?? []), value]);
+		}
+	}
+
+	let found: string | null = null;
+	let best = 1;
+	for (const [name, values] of pinnedBy) {
+		const distinct = new Set(values.map((value) => JSON.stringify(value)));
+		if (values.length <= best || distinct.size !== values.length) continue;
+
+		found = name;
+		best = values.length;
+	}
+
+	return found;
+};
+
+// The Select already says which arm this is, so the arm does not ask again.
+const withoutDiscriminator = (
+	branch: JsonSchema,
+	discriminator: string | null,
+): JsonSchema => {
+	if (!discriminator || !branch.properties?.[discriminator]) return branch;
+
+	const properties = { ...branch.properties };
+	delete properties[discriminator];
+
+	return {
+		...branch,
+		properties,
+		required: Array.isArray(branch.required)
+			? branch.required.filter((name) => name !== discriminator)
+			: branch.required,
+	};
+};
+
+const unionForm = (branches: JsonSchema[], fallbackLabel: string): Form => {
+	const discriminator = findDiscriminator(branches);
+
+	return {
+		fields: [],
+		unsupported: null,
+		union: {
+			discriminator,
+			label: discriminator ? humanize(discriminator) : null,
+			branches: branches.map((branch, index) => {
+				const value = discriminator
+					? pinned(branch.properties?.[discriminator])
+					: undefined;
+				const name =
+					typeof branch.title === "string"
+						? branch.title
+						: typeof value === "string"
+							? value
+							: null;
+
+				return {
+					key: String(index),
+					name,
+					value,
+					form: toForm(
+						withoutDiscriminator(branch, discriminator),
+						fallbackLabel,
+					),
+				};
+			}),
+		},
+	};
+};
+
+// The arm being filled in, or the whole form when there is no union.
+export const activeForm = (form: Form, key: string | null): Form => {
+	if (!form.union) return form;
+
+	const branch =
+		form.union.branches.find((candidate) => candidate.key === key) ??
+		form.union.branches[0];
+
+	return branch.form;
+};
+
+export const branchFor = (form: Form, key: string | null): Branch | null => {
+	if (!form.union) return null;
+
+	return (
+		form.union.branches.find((candidate) => candidate.key === key) ??
+		form.union.branches[0]
+	);
+};
+
+// A value survives a switch only if its field and its control both do.
+const controlsByKey = (form: Form) => {
+	const controls = new Map<string, Field["control"]>();
+	const walk = (field: Field) => {
+		controls.set(field.key, field.control);
+		if (field.control === "group") field.fields.forEach(walk);
+	};
+	form.fields.forEach(walk);
+
+	return controls;
+};
+
+const pathsByKey = (form: Form) => {
+	const paths = new Map<string, string[]>();
+	const walk = (field: Field) => {
+		paths.set(field.key, field.path);
+		if (field.control === "group") field.fields.forEach(walk);
+	};
+	form.fields.forEach(walk);
+
+	return paths;
+};
+
+// No field carries the Select's value, and the server checks the arm against it.
+export const withDiscriminator = (
+	form: Form,
+	key: string | null,
+	input: unknown,
+): unknown => {
+	const branch = branchFor(form, key);
+	const discriminator = form.union?.discriminator;
+
+	return discriminator && branch?.value !== undefined
+		? writeAt(input, [discriminator], branch.value)
+		: input;
+};
+
+export const startingInput = (form: Form, key: string | null): unknown =>
+	withDiscriminator(form, key, initialInput(activeForm(form, key)));
+
+export const switchBranch = (
+	form: Form,
+	from: string | null,
+	to: string | null,
+	input: unknown,
+): unknown => {
+	const was = controlsByKey(activeForm(form, from));
+	const entering = activeForm(form, to);
+	const paths = pathsByKey(entering);
+
+	let next = startingInput(form, to);
+	for (const [key, control] of controlsByKey(entering)) {
+		if (was.get(key) !== control) continue;
+
+		const path = paths.get(key);
+		const value = path && readAt(input, path);
+		if (path && value !== undefined) next = writeAt(next, path, value);
+	}
+
+	return next;
+};
+
 export const toForm = (
 	schema: JsonSchema | undefined,
 	fallbackLabel = "",
@@ -271,6 +472,10 @@ export const toForm = (
 	if (!schema || !Object.keys(schema).length) {
 		return { fields: [], unsupported: null };
 	}
+
+	// Only at the top level; alternation inside a property stays refused.
+	const branches = objectBranches(schema.oneOf);
+	if (branches) return unionForm(branches, fallbackLabel);
 
 	const resolved = resolveType(schema);
 	if ("reason" in resolved) return { fields: [], unsupported: resolved.reason };

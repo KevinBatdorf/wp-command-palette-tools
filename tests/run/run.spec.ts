@@ -84,3 +84,41 @@ test("the palette shows the reason the site gave for refusing", async ({
 	).toBeVisible();
 	await expect(palette.getByRole("heading", { name: "Result" })).toBeHidden();
 });
+
+test("a union schema picks an arm and sends what that arm asked for", async ({
+	page,
+}) => {
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: /Book Test Slot/ }).click();
+
+	// The arms pin `kind`, so it becomes the picker rather than a field.
+	const kind = palette.getByRole("combobox", { name: "Kind" });
+	await expect(kind).toBeVisible();
+	await expect(kind).toHaveValue("0");
+	await expect(
+		palette.getByRole("spinbutton", { name: /Floor/ }),
+	).toBeVisible();
+	await expect(
+		palette.getByRole("checkbox", { name: /Standing/ }),
+	).toBeHidden();
+
+	await palette.getByRole("textbox", { name: /Name/ }).fill("Ada");
+	await kind.selectOption("1");
+
+	// The shared field keeps what was typed; the first arm's own is gone.
+	await expect(palette.getByRole("textbox", { name: /Name/ })).toHaveValue(
+		"Ada",
+	);
+	await expect(
+		palette.getByRole("checkbox", { name: /Standing/ }),
+	).toBeVisible();
+	await expect(palette.getByRole("spinbutton", { name: /Floor/ })).toBeHidden();
+
+	await palette.getByRole("button", { name: "Run", exact: true }).click();
+	await palette.getByRole("button", { name: "Yes, run it" }).click();
+
+	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
+	// The picker's own value has to travel, since the server validates the arm.
+	await expect(palette.getByText('"kind": "desk"')).toBeVisible();
+	await expect(palette.getByText('"name": "Ada"')).toBeVisible();
+});

@@ -8,6 +8,8 @@ export type JsonSchema = {
 	// Core keeps a draft-04 tuple as an array of schemas, one per slot.
 	items?: JsonSchema | JsonSchema[];
 	enum?: unknown[];
+	// A discriminated union of object branches; anything else stays refused.
+	oneOf?: JsonSchema[];
 	required?: string[];
 	default?: unknown;
 	additionalProperties?: boolean | JsonSchema;
