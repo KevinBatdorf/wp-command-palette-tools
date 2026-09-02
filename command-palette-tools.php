@@ -35,7 +35,8 @@ function wpcp_tools_palette_enabled()
 	return current_user_can('manage_options');
 }
 
-add_action('admin_enqueue_scripts', function () {
+function wpcp_tools_enqueue_palette()
+{
 	if (!wpcp_tools_palette_enabled()) return;
 
 	$deps = require plugin_dir_path(__FILE__) . 'build/palette.asset.php';
@@ -46,6 +47,10 @@ add_action('admin_enqueue_scripts', function () {
 		$deps['version'],
 		true
 	);
+	// Only wp-admin prints `userSettings`, and recents are stored per user.
+	wp_localize_script('kevinbatdorf/wpcp-tools-palette', 'wpcpTools', [
+		'uid' => (string) get_current_user_id(),
+	]);
 	wp_set_script_translations('kevinbatdorf/wpcp-tools-palette', 'command-palette-tools');
 	// Core's own stylesheets; without them the palette renders unstyled.
 	wp_enqueue_style(
@@ -55,10 +60,13 @@ add_action('admin_enqueue_scripts', function () {
 		$deps['version']
 	);
 	wp_style_add_data('kevinbatdorf/wpcp-tools-palette', 'rtl', 'replace');
-});
+}
+
+add_action('admin_enqueue_scripts', 'wpcp_tools_enqueue_palette');
+add_action('wp_enqueue_scripts', 'wpcp_tools_enqueue_palette');
 
 add_action('admin_bar_menu', function ($wp_admin_bar) {
-	if (!is_admin() || !wpcp_tools_palette_enabled()) return;
+	if (!wpcp_tools_palette_enabled()) return;
 
 	$wp_admin_bar->add_node([
 		'id' => 'wpcp-tools-palette',
