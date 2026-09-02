@@ -1,104 +1,529 @@
 [
-	{ "query": "what is this website called", "expect": "core/get-site-info" },
+	{
+		"query": "what is this website called",
+		"expect": "core/get-site-info",
+		"kind": "intent"
+	},
 	{
 		"query": "what address does the site live at",
-		"expect": "core/get-site-info"
+		"expect": "core/get-site-info",
+		"kind": "intent"
 	},
-	{ "query": "who am i logged in as", "expect": "core/get-user-info" },
-	{ "query": "what account am i using", "expect": "core/get-user-info" },
-	{ "query": "what php version", "expect": "core/get-environment-info" },
+	{
+		"query": "is this site set to allow signups",
+		"expect": "core/get-site-info",
+		"kind": "intent"
+	},
+	{
+		"query": "what email does this install send from",
+		"expect": "core/get-site-info",
+		"kind": "intent"
+	},
+	{
+		"query": "who am i logged in as",
+		"expect": "core/get-user-info",
+		"kind": "intent"
+	},
+	{
+		"query": "what account am i using",
+		"expect": "core/get-user-info",
+		"kind": "intent"
+	},
+	{
+		"query": "what am i allowed to do here",
+		"expect": "core/get-user-info",
+		"kind": "intent"
+	},
+	{
+		"query": "show me my own profile details",
+		"expect": "core/get-user-info",
+		"kind": "intent"
+	},
+	{
+		"query": "what php version",
+		"expect": "core/get-environment-info",
+		"kind": "intent"
+	},
 	{
 		"query": "which release of wordpress is this",
-		"expect": "core/get-environment-info"
+		"expect": "core/get-environment-info",
+		"kind": "intent"
+	},
+	{
+		"query": "is this server up to date",
+		"expect": "core/get-environment-info",
+		"kind": "intent"
+	},
+	{
+		"query": "what is this thing running on",
+		"expect": "core/get-environment-info",
+		"kind": "intent"
 	},
 	{
 		"query": "what background jobs are queued",
-		"expect": "wpcp/list-cron-events"
+		"expect": "wpcp/list-cron-events",
+		"kind": "intent"
 	},
 	{
 		"query": "when does the next timer fire",
-		"expect": "wpcp/list-cron-events"
+		"expect": "wpcp/list-cron-events",
+		"kind": "intent"
 	},
-	{ "query": "fire that job right now", "expect": "wpcp/run-cron-event" },
+	{
+		"query": "is anything overdue in the queue",
+		"expect": "wpcp/list-cron-events",
+		"kind": "intent"
+	},
+	{
+		"query": "fire that job right now",
+		"expect": "wpcp/run-cron-event",
+		"kind": "intent"
+	},
 	{
 		"query": "trigger the queued task immediately",
-		"expect": "wpcp/run-cron-event"
+		"expect": "wpcp/run-cron-event",
+		"kind": "intent"
+	},
+	{
+		"query": "do not wait for the timer, just run it",
+		"expect": "wpcp/run-cron-event",
+		"kind": "intent"
 	},
 	{
 		"query": "why is my site slow on every request",
-		"expect": "wpcp/list-autoloaded-options"
+		"expect": "wpcp/list-autoloaded-options",
+		"kind": "intent"
 	},
 	{
 		"query": "what is bloating the options table",
-		"expect": "wpcp/list-autoloaded-options"
+		"expect": "wpcp/list-autoloaded-options",
+		"kind": "intent"
+	},
+	{
+		"query": "what gets loaded before anything happens",
+		"expect": "wpcp/list-autoloaded-options",
+		"kind": "intent"
 	},
 	{
 		"query": "which uploads is nothing using",
-		"expect": "wpcp/list-unattached-media"
+		"expect": "wpcp/list-unattached-media",
+		"kind": "intent"
 	},
 	{
 		"query": "find orphaned files in the library",
-		"expect": "wpcp/list-unattached-media"
+		"expect": "wpcp/list-unattached-media",
+		"kind": "intent"
+	},
+	{
+		"query": "images no post points at",
+		"expect": "wpcp/list-unattached-media",
+		"kind": "intent"
 	},
 	{
 		"query": "clear out stale cached rows",
-		"expect": "wpcp/delete-expired-transients"
+		"expect": "wpcp/delete-expired-transients",
+		"kind": "intent"
 	},
 	{
 		"query": "get rid of old cache entries",
-		"expect": "wpcp/delete-expired-transients"
+		"expect": "wpcp/delete-expired-transients",
+		"kind": "intent"
+	},
+	{
+		"query": "tidy up temporary values that expired",
+		"expect": "wpcp/delete-expired-transients",
+		"kind": "intent"
 	},
 	{
 		"query": "get rid of deleted stuff for good",
-		"expect": "wpcp/empty-trash"
+		"expect": "wpcp/empty-trash",
+		"kind": "intent"
 	},
 	{
 		"query": "permanently remove what i threw away",
-		"expect": "wpcp/empty-trash"
+		"expect": "wpcp/empty-trash",
+		"kind": "intent"
 	},
-	{ "query": "combine two categories into one", "expect": "wpcp/merge-terms" },
-	{ "query": "fold one tag into another", "expect": "wpcp/merge-terms" },
+	{
+		"query": "wipe the bin",
+		"expect": "wpcp/empty-trash",
+		"kind": "intent"
+	},
+	{
+		"query": "combine two categories into one",
+		"expect": "wpcp/merge-terms",
+		"kind": "intent"
+	},
+	{
+		"query": "fold one tag into another",
+		"expect": "wpcp/merge-terms",
+		"kind": "intent"
+	},
+	{
+		"query": "i have duplicate topics and want one",
+		"expect": "wpcp/merge-terms",
+		"kind": "intent"
+	},
 	{
 		"query": "give one writer's posts to somebody else",
-		"expect": "wpcp/reassign-author"
+		"expect": "wpcp/reassign-author",
+		"kind": "intent"
 	},
 	{
 		"query": "change who is credited for these articles",
-		"expect": "wpcp/reassign-author"
+		"expect": "wpcp/reassign-author",
+		"kind": "intent"
+	},
+	{
+		"query": "this person left, move their work",
+		"expect": "wpcp/reassign-author",
+		"kind": "intent"
 	},
 	{
 		"query": "stop discussion on older articles",
-		"expect": "wpcp/close-comments"
+		"expect": "wpcp/close-comments",
+		"kind": "intent"
 	},
 	{
 		"query": "turn off replies for anything ancient",
-		"expect": "wpcp/close-comments"
+		"expect": "wpcp/close-comments",
+		"kind": "intent"
+	},
+	{
+		"query": "no more feedback on last year's writing",
+		"expect": "wpcp/close-comments",
+		"kind": "intent"
 	},
 	{
 		"query": "some posts never went live on their date",
-		"expect": "wpcp/publish-missed-schedules"
+		"expect": "wpcp/publish-missed-schedules",
+		"kind": "intent"
 	},
 	{
 		"query": "drafts stuck past their publish time",
-		"expect": "wpcp/publish-missed-schedules"
+		"expect": "wpcp/publish-missed-schedules",
+		"kind": "intent"
+	},
+	{
+		"query": "things that should already be public but are not",
+		"expect": "wpcp/publish-missed-schedules",
+		"kind": "intent"
 	},
 	{
 		"query": "swap a word everywhere",
-		"expect": "wpcp/search-replace-content"
+		"expect": "wpcp/search-replace-content",
+		"kind": "intent"
 	},
 	{
 		"query": "change a phrase across all my content",
-		"expect": "wpcp/search-replace-content"
+		"expect": "wpcp/search-replace-content",
+		"kind": "intent"
 	},
-	{ "query": "what can this thing do", "expect": "wpcp/list-abilities" },
+	{
+		"query": "our company renamed, update every mention",
+		"expect": "wpcp/search-replace-content",
+		"kind": "intent"
+	},
+	{
+		"query": "what can this thing do",
+		"expect": "wpcp/list-abilities",
+		"kind": "intent"
+	},
+	{
+		"query": "show me everything available to me",
+		"expect": "wpcp/list-abilities",
+		"kind": "intent"
+	},
 	{
 		"query": "explain what one of these does",
-		"expect": "wpcp/describe-ability"
+		"expect": "wpcp/describe-ability",
+		"kind": "intent"
 	},
-	{ "query": "pizza recipe", "expect": null },
-	{ "query": "how do i bake bread", "expect": null },
-	{ "query": "xylophone", "expect": null },
-	{ "query": "what is the weather tomorrow", "expect": null },
-	{ "query": "book a flight to tokyo", "expect": null },
-	{ "query": "what is the capital of france", "expect": null }
+	{
+		"query": "what does this action take as input",
+		"expect": "wpcp/describe-ability",
+		"kind": "intent"
+	},
+	{
+		"query": "site information",
+		"expect": "core/get-site-info",
+		"kind": "overlap"
+	},
+	{
+		"query": "user information",
+		"expect": "core/get-user-info",
+		"kind": "overlap"
+	},
+	{
+		"query": "environment info",
+		"expect": "core/get-environment-info",
+		"kind": "overlap"
+	},
+	{
+		"query": "scheduled events",
+		"expect": "wpcp/list-cron-events",
+		"kind": "overlap"
+	},
+	{
+		"query": "run a scheduled event",
+		"expect": "wpcp/run-cron-event",
+		"kind": "overlap"
+	},
+	{
+		"query": "autoloaded options",
+		"expect": "wpcp/list-autoloaded-options",
+		"kind": "overlap"
+	},
+	{
+		"query": "unattached media",
+		"expect": "wpcp/list-unattached-media",
+		"kind": "overlap"
+	},
+	{
+		"query": "expired transients",
+		"expect": "wpcp/delete-expired-transients",
+		"kind": "overlap"
+	},
+	{
+		"query": "delete transients",
+		"expect": "wpcp/delete-expired-transients",
+		"kind": "overlap"
+	},
+	{
+		"query": "empty the trash",
+		"expect": "wpcp/empty-trash",
+		"kind": "overlap"
+	},
+	{
+		"query": "trash",
+		"expect": "wpcp/empty-trash",
+		"kind": "overlap"
+	},
+	{
+		"query": "merge terms",
+		"expect": "wpcp/merge-terms",
+		"kind": "overlap"
+	},
+	{
+		"query": "reassign posts",
+		"expect": "wpcp/reassign-author",
+		"kind": "overlap"
+	},
+	{
+		"query": "close comments",
+		"expect": "wpcp/close-comments",
+		"kind": "overlap"
+	},
+	{
+		"query": "missed their schedule",
+		"expect": "wpcp/publish-missed-schedules",
+		"kind": "overlap"
+	},
+	{
+		"query": "find and replace",
+		"expect": "wpcp/search-replace-content",
+		"kind": "overlap"
+	},
+	{
+		"query": "replace across posts",
+		"expect": "wpcp/search-replace-content",
+		"kind": "overlap"
+	},
+	{
+		"query": "list abilities",
+		"expect": "wpcp/list-abilities",
+		"kind": "overlap"
+	},
+	{
+		"query": "describe an ability",
+		"expect": "wpcp/describe-ability",
+		"kind": "overlap"
+	},
+	{
+		"query": "unattached",
+		"expect": "wpcp/list-unattached-media",
+		"kind": "overlap"
+	},
+	{
+		"query": "autoloaded",
+		"expect": "wpcp/list-autoloaded-options",
+		"kind": "overlap"
+	},
+	{
+		"query": "transients",
+		"expect": "wpcp/delete-expired-transients",
+		"kind": "overlap"
+	},
+	{
+		"query": "cron",
+		"expect": ["wpcp/list-cron-events", "wpcp/run-cron-event"],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "schedule",
+		"expect": [
+			"wpcp/list-cron-events",
+			"wpcp/run-cron-event",
+			"wpcp/publish-missed-schedules"
+		],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "clean up old stuff",
+		"expect": [
+			"wpcp/empty-trash",
+			"wpcp/delete-expired-transients",
+			"wpcp/list-unattached-media"
+		],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "what version is this",
+		"expect": ["core/get-environment-info", "core/get-site-info"],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "information about this install",
+		"expect": ["core/get-site-info", "core/get-environment-info"],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "delete things i do not need",
+		"expect": ["wpcp/empty-trash", "wpcp/delete-expired-transients"],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "comments",
+		"expect": ["wpcp/close-comments"],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "posts",
+		"expect": [
+			"wpcp/reassign-author",
+			"wpcp/search-replace-content",
+			"wpcp/publish-missed-schedules"
+		],
+		"kind": "ambiguous"
+	},
+	{
+		"query": "quién soy",
+		"expect": "core/get-user-info",
+		"kind": "translated"
+	},
+	{
+		"query": "qué versión de php",
+		"expect": "core/get-environment-info",
+		"kind": "translated"
+	},
+	{
+		"query": "vaciar la papelera",
+		"expect": "wpcp/empty-trash",
+		"kind": "translated"
+	},
+	{
+		"query": "combinar dos categorías",
+		"expect": "wpcp/merge-terms",
+		"kind": "translated"
+	},
+	{
+		"query": "welche php version",
+		"expect": "core/get-environment-info",
+		"kind": "translated"
+	},
+	{
+		"query": "papierkorb leeren",
+		"expect": "wpcp/empty-trash",
+		"kind": "translated"
+	},
+	{
+		"query": "wer bin ich",
+		"expect": "core/get-user-info",
+		"kind": "translated"
+	},
+	{
+		"query": "geplante ereignisse",
+		"expect": "wpcp/list-cron-events",
+		"kind": "translated"
+	},
+	{
+		"query": "qui suis-je",
+		"expect": "core/get-user-info",
+		"kind": "translated"
+	},
+	{
+		"query": "vider la corbeille",
+		"expect": "wpcp/empty-trash",
+		"kind": "translated"
+	},
+	{
+		"query": "quelle version de php",
+		"expect": "core/get-environment-info",
+		"kind": "translated"
+	},
+	{
+		"query": "ゴミ箱を空にする",
+		"expect": "wpcp/empty-trash",
+		"kind": "translated"
+	},
+	{
+		"query": "pizza recipe",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "how do i bake bread",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "xylophone",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "what is the weather tomorrow",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "book a flight to tokyo",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "what is the capital of france",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "play some music",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "who won the world cup",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "send an email to my mum",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "what time is it in berlin",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "translate this into spanish",
+		"expect": null,
+		"kind": "none"
+	},
+	{
+		"query": "recommend a good novel",
+		"expect": null,
+		"kind": "none"
+	}
 ]
