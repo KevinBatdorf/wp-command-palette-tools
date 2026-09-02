@@ -39,8 +39,8 @@ declare global {
 				useCommandLoader: (loader: CommandLoader) => void;
 			};
 		};
-		// The only user id a plain admin screen carries.
-		userSettings?: { uid?: string };
+		// Localized by the plugin: the front end prints no `userSettings`.
+		wpcpTools?: { uid?: string };
 	}
 }
 
