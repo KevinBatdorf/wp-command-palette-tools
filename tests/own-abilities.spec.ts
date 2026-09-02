@@ -38,12 +38,7 @@ const BUNDLED: Record<
 		readonly: false,
 		destructive: true,
 	},
-	"wpcp/empty-trashed-posts": {
-		category: "maintenance",
-		readonly: false,
-		destructive: true,
-	},
-	"wpcp/delete-spam-and-trashed-comments": {
+	"wpcp/empty-trash": {
 		category: "maintenance",
 		readonly: false,
 		destructive: true,
@@ -230,7 +225,7 @@ test("a destructive one stops at a confirm before it runs", async ({
 	await expect(palette.getByText('"expired_remaining"')).toBeVisible();
 });
 
-test("a capability an ability needs is checked at the run, not at the list", async ({
+test("everything bundled here is refused to a user without manage_options", async ({
 	requestUtils,
 }) => {
 	const password = "correct-horse-battery";
@@ -250,41 +245,31 @@ test("a capability an ability needs is checked at the run, not at the list", asy
 		baseURL: requestUtils.baseURL,
 	});
 
-	// The listing is gated on being logged in, so an editor is shown both.
+	// Core gates its listing on being logged in, so an editor is shown all of
+	// them and is turned down one layer later.
 	const listed = await editor.rest<Ability[]>({
 		path: CATALOG,
 		params: { per_page: 100 },
 	});
 	expect(listed.map(({ name }) => name)).toEqual(
-		expect.arrayContaining([
-			"wpcp/delete-expired-transients",
-			"wpcp/empty-trashed-posts",
-		]),
+		expect.arrayContaining(Object.keys(BUNDLED)),
 	);
 
-	// An editor has no manage_options, so this one is theirs to see and not run.
-	const refused = await run(editor, "wpcp/delete-expired-transients", "DELETE");
-	expect(refused.status).toBe(403);
-	expect(refused.body.code).toBe("rest_ability_cannot_execute");
+	// One gate, so the method an ability answers on makes no difference to it.
+	for (const [name, method, input] of [
+		["wpcp/list-cron-events", "GET", undefined],
+		["wpcp/close-comments", "POST", { older_than_days: 1 }],
+		["wpcp/empty-trash", "DELETE", { targets: ["posts"] }],
+	] as const) {
+		const refused = await run(editor, name, method, input);
 
-	// A capability check, not a blanket refusal: an editor has delete_others_posts.
-	const allowed = await run(editor, "wpcp/empty-trashed-posts", "DELETE");
-	expect(allowed.status).toBe(200);
+		expect(refused.status, name).toBe(403);
+		expect(refused.body.code, name).toBe("rest_ability_cannot_execute");
+	}
 
-	// The palette leaves out what it would only be refused.
-	const runnable = await editor.rest<{ names: string[] }>({
-		path: "/wpcp/v1/runnable-abilities",
-	});
-	expect(runnable.names).toContain("wpcp/empty-trashed-posts");
-	expect(runnable.names).toContain("wpcp/delete-spam-and-trashed-comments");
-	expect(runnable.names).not.toContain("wpcp/delete-expired-transients");
-
-	const asAdmin = await requestUtils.rest<{ names: string[] }>({
-		path: "/wpcp/v1/runnable-abilities",
-	});
-	expect(asAdmin.names).toContain("wpcp/delete-expired-transients");
-	// An ability whose permission depends on input still answers for itself.
-	expect(asAdmin.names).toContain("wpcp/merge-terms");
+	// The session itself is fine, so those refusals are the gate and not the login.
+	const me = await editor.rest<{ slug: string }>({ path: "/wp/v2/users/me" });
+	expect(me.slug).toBe("edith");
 });
 
 test("an upload named only in post content is not called unattached", async ({

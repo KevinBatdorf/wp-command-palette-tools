@@ -79,7 +79,15 @@ function wpcp_tools_post_type_field()
 	], wpcp_tools_post_types());
 }
 
-// Another plugin's callback can throw on null input; unknown is not a refusal.
+// One gate for everything this plugin registers. These are all site-maintenance
+// jobs, and the palette that lists them asks for the same capability.
+function wpcp_tools_can_run_maintenance()
+{
+	return current_user_can('manage_options');
+}
+
+// Answered with no input, so a yes is trustworthy and a no often is not.
+// Null is neither: unknown, and never treated as a refusal.
 function wpcp_tools_can_run_ability($ability)
 {
 	try {
@@ -88,7 +96,25 @@ function wpcp_tools_can_run_ability($ability)
 		return null;
 	}
 
-	return is_wp_error($allowed) ? false : (bool) $allowed;
+	if ($allowed === true) return true;
+
+	// WooCommerce checks edit_product against the id it was passed, so asking
+	// with nothing gets a no from an ability the user can plainly run.
+	return wpcp_tools_needs_input($ability) ? null : false;
+}
+
+function wpcp_tools_needs_input($ability)
+{
+	$schema = $ability->get_input_schema();
+	if (!is_array($schema) || !$schema) return false;
+	if (!empty($schema['required'])) return true;
+
+	// A union says nothing at the top level; every branch carries the requirement.
+	foreach (['oneOf', 'anyOf', 'allOf', 'not', '$ref'] as $keyword) {
+		if (isset($schema[$keyword])) return true;
+	}
+
+	return false;
 }
 
 // Not a way around show_in_rest: the same set, listed better.

@@ -39,7 +39,7 @@ add_action('wp_abilities_api_init', function () {
 			'default' => [],
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => fn() => current_user_can('read'),
+		'permission_callback' => 'wpcp_tools_can_run_maintenance',
 		'execute_callback' => 'wpcp_tools_list_abilities',
 		'meta' => [
 			'public' => true,
@@ -65,7 +65,7 @@ add_action('wp_abilities_api_init', function () {
 			'additionalProperties' => false,
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => fn() => current_user_can('read'),
+		'permission_callback' => 'wpcp_tools_can_run_maintenance',
 		'execute_callback' => 'wpcp_tools_describe_ability',
 		'meta' => [
 			'public' => true,

@@ -35,7 +35,7 @@ add_action('wp_abilities_api_init', function () {
 			'additionalProperties' => false,
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => 'wpcp_tools_can_merge_terms',
+		'permission_callback' => 'wpcp_tools_can_run_maintenance',
 		'execute_callback' => 'wpcp_tools_merge_terms',
 		'meta' => [
 			'public' => true,
@@ -65,7 +65,7 @@ add_action('wp_abilities_api_init', function () {
 			'additionalProperties' => false,
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => fn() => current_user_can('edit_others_posts') && current_user_can('list_users'),
+		'permission_callback' => 'wpcp_tools_can_run_maintenance',
 		'execute_callback' => 'wpcp_tools_reassign_author',
 		'meta' => [
 			'public' => true,
@@ -99,7 +99,7 @@ add_action('wp_abilities_api_init', function () {
 			'default' => [],
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => fn() => current_user_can('edit_others_posts'),
+		'permission_callback' => 'wpcp_tools_can_run_maintenance',
 		'execute_callback' => 'wpcp_tools_close_comments',
 		'meta' => [
 			'public' => true,
@@ -128,7 +128,7 @@ add_action('wp_abilities_api_init', function () {
 			'default' => [],
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => fn() => current_user_can('edit_others_posts') && current_user_can('publish_posts'),
+		'permission_callback' => 'wpcp_tools_can_run_maintenance',
 		'execute_callback' => 'wpcp_tools_publish_missed_schedules',
 		'meta' => [
 			'public' => true,
@@ -175,7 +175,7 @@ add_action('wp_abilities_api_init', function () {
 			'additionalProperties' => false,
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => fn() => current_user_can('edit_others_posts'),
+		'permission_callback' => 'wpcp_tools_can_run_maintenance',
 		'execute_callback' => 'wpcp_tools_search_replace_content',
 		// A replace run twice is not the same as a replace run once.
 		'meta' => [
@@ -217,16 +217,6 @@ function wpcp_tools_find_term($value, $taxonomy)
 	}
 
 	return $term ?: null;
-}
-
-function wpcp_tools_can_merge_terms($input)
-{
-	$taxonomy = get_taxonomy((string) wpcp_tools_input($input, 'taxonomy', ''));
-	// No taxonomy means a listing is asking, not a run: the schema requires one.
-	if (!$taxonomy) return current_user_can('manage_categories');
-
-	return current_user_can($taxonomy->cap->manage_terms)
-		&& current_user_can($taxonomy->cap->delete_terms);
 }
 
 function wpcp_tools_merge_terms($input)
