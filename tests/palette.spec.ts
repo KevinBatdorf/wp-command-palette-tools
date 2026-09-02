@@ -124,6 +124,41 @@ test("Cmd+K still belongs to core's palette", async ({ admin, page }) => {
 	).toBeHidden();
 });
 
+test("core's palette hands over to this one", async ({ admin, page }) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+k`);
+
+	const core = page.getByRole("dialog", { name: "Command palette" });
+	// Core's palette re-filters its own results, so the label has to match.
+	await page.keyboard.type("ability");
+	await core.getByRole("option", { name: /Run an ability/ }).click();
+
+	await expect(core).toBeHidden();
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await expect(palette).toBeVisible();
+
+	// Core's palette returns focus as it unmounts, so typing is the real check.
+	await page.keyboard.type("environment");
+	await expect(palette.getByRole("option")).toHaveText([
+		/Get Environment Info/,
+	]);
+});
+
+test("Cmd+K in the post editor reaches this palette", async ({
+	admin,
+	page,
+}) => {
+	await admin.createNewPost({ title: "Doorway" });
+	await page.keyboard.press(`${modifier}+k`);
+	await page.keyboard.type("ability");
+
+	await page.getByRole("option", { name: /Run an ability/ }).click();
+
+	await expect(
+		page.getByRole("dialog", { name: "Ability palette" }),
+	).toBeVisible();
+});
+
 test("computed results answer the search itself", async ({ admin, page }) => {
 	await admin.visitAdminPage("plugins.php");
 	await page.keyboard.press(`${modifier}+j`);

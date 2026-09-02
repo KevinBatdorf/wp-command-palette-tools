@@ -29,6 +29,7 @@ import { fireNotice } from "../lib/wordpress";
 import { AbilityForm } from "./ability-form";
 import { NOTICE_CONTEXT } from "./palette-notices";
 import { recents } from "./recents-store";
+import { useDoorwayCommand } from "./use-doorway-command";
 import { useOpenPalette } from "./use-open-palette";
 
 type Result = {
@@ -112,8 +113,10 @@ export const PaletteMenu = () => {
 
 	const input = useRef<HTMLInputElement>(null);
 
-	const toggle = useCallback(() => setIsOpen((open) => !open), []);
+	const open = useCallback(() => setIsOpen(true), []);
+	const toggle = useCallback(() => setIsOpen((wasOpen) => !wasOpen), []);
 	useOpenPalette(toggle);
+	useDoorwayCommand(open);
 
 	const close = useCallback(() => {
 		setSearch("");
