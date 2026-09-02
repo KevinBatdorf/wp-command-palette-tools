@@ -7,7 +7,9 @@ import {
 	catalogHash,
 	catalogState,
 	createCatalogLoader,
+	onlyRunnable,
 	runHref,
+	runnableNames,
 } from "../../src/lib/abilities.ts";
 
 const ability = (overrides: Partial<Ability> = {}): Ability => ({
@@ -209,5 +211,87 @@ describe("abilitySource", () => {
 	it("falls back when either half is missing", () => {
 		assert.equal(abilitySource(ability({ name: "nameless" })), "site");
 		assert.equal(abilitySource(ability({ category: "" })), "core");
+	});
+});
+
+describe("runnableNames", () => {
+	it("reads the names the route reported", () => {
+		const names = runnableNames({ names: ["wpcp/a", "wpcp/b"] });
+
+		assert.deepEqual([...(names ?? [])], ["wpcp/a", "wpcp/b"]);
+	});
+
+	it("is null for anything that is not a list of names", () => {
+		assert.equal(runnableNames(undefined), null);
+		assert.equal(runnableNames({}), null);
+		assert.equal(runnableNames({ names: "wpcp/a" }), null);
+	});
+
+	it("keeps an empty list, which means nothing is runnable", () => {
+		assert.deepEqual([...(runnableNames({ names: [] }) ?? [])], []);
+	});
+});
+
+describe("onlyRunnable", () => {
+	const abilities = [
+		ability({ name: "wpcp/allowed" }),
+		ability({ name: "wpcp/refused" }),
+	];
+
+	it("drops what the current user would only be refused", () => {
+		const kept = onlyRunnable(abilities, new Set(["wpcp/allowed"]));
+
+		assert.deepEqual(
+			kept.map(({ name }) => name),
+			["wpcp/allowed"],
+		);
+	});
+
+	// A dead probe must not empty the palette.
+	it("filters nothing when there is no answer", () => {
+		assert.deepEqual(onlyRunnable(abilities, null), abilities);
+	});
+});
+
+describe("createCatalogLoader with a runnable probe", () => {
+	const listing = [
+		ability({ name: "wpcp/allowed" }),
+		ability({ name: "wpcp/refused" }),
+	];
+
+	it("leaves out abilities the run would refuse", async () => {
+		const loader = createCatalogLoader(
+			async () => listing,
+			async () => ({ names: ["wpcp/allowed"] }),
+		);
+
+		const catalog = await loader.load();
+
+		assert.deepEqual(
+			catalog.abilities.map(({ name }) => name),
+			["wpcp/allowed"],
+		);
+		// The hash follows what is shown, so two users can hold different ones.
+		assert.equal(catalog.hash, catalogHash(catalog.abilities));
+	});
+
+	it("shows the whole listing when the probe fails", async () => {
+		const loader = createCatalogLoader(
+			async () => listing,
+			async () => {
+				throw new Error("no route");
+			},
+		);
+
+		assert.equal((await loader.load()).abilities.length, 2);
+	});
+
+	it("shows the whole listing when the probe answers nonsense", async () => {
+		const loader = createCatalogLoader(
+			async () => listing,
+			async () => "not a payload",
+		);
+
+		assert.equal((await loader.load()).abilities.length, 2);
 	});
 });

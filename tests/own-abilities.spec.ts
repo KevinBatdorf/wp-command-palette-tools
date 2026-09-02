@@ -38,7 +38,12 @@ const BUNDLED: Record<
 		readonly: false,
 		destructive: true,
 	},
-	"wpcp/empty-trash": {
+	"wpcp/empty-trashed-posts": {
+		category: "maintenance",
+		readonly: false,
+		destructive: true,
+	},
+	"wpcp/delete-spam-and-trashed-comments": {
 		category: "maintenance",
 		readonly: false,
 		destructive: true,
@@ -253,7 +258,7 @@ test("a capability an ability needs is checked at the run, not at the list", asy
 	expect(listed.map(({ name }) => name)).toEqual(
 		expect.arrayContaining([
 			"wpcp/delete-expired-transients",
-			"wpcp/empty-trash",
+			"wpcp/empty-trashed-posts",
 		]),
 	);
 
@@ -263,8 +268,57 @@ test("a capability an ability needs is checked at the run, not at the list", asy
 	expect(refused.body.code).toBe("rest_ability_cannot_execute");
 
 	// A capability check, not a blanket refusal: an editor has delete_others_posts.
-	const allowed = await run(editor, "wpcp/empty-trash", "DELETE", {
-		targets: ["posts"],
-	});
+	const allowed = await run(editor, "wpcp/empty-trashed-posts", "DELETE");
 	expect(allowed.status).toBe(200);
+
+	// The palette leaves out what it would only be refused.
+	const runnable = await editor.rest<{ names: string[] }>({
+		path: "/wpcp/v1/runnable-abilities",
+	});
+	expect(runnable.names).toContain("wpcp/empty-trashed-posts");
+	expect(runnable.names).toContain("wpcp/delete-spam-and-trashed-comments");
+	expect(runnable.names).not.toContain("wpcp/delete-expired-transients");
+
+	const asAdmin = await requestUtils.rest<{ names: string[] }>({
+		path: "/wpcp/v1/runnable-abilities",
+	});
+	expect(asAdmin.names).toContain("wpcp/delete-expired-transients");
+	// An ability whose permission depends on input still answers for itself.
+	expect(asAdmin.names).toContain("wpcp/merge-terms");
+});
+
+test("an upload named only in post content is not called unattached", async ({
+	requestUtils,
+}) => {
+	const png = Buffer.from(
+		"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+		"base64",
+	);
+	const upload = (name: string) =>
+		requestUtils.rest<{ id: number; source_url: string }>({
+			method: "POST",
+			path: "/wp/v2/media",
+			multipart: { file: { name, mimeType: "image/png", buffer: png } },
+		});
+
+	const inContent = await upload("referenced.png");
+	const orphan = await upload("orphan.png");
+
+	await requestUtils.rest({
+		path: "/wp/v2/posts",
+		method: "POST",
+		data: {
+			title: "Uses an image",
+			content: `<figure class="wp-block-image"><img src="${inContent.source_url}" class="wp-image-${inContent.id}"/></figure>`,
+			status: "publish",
+		},
+	});
+
+	const listed = await run(requestUtils, "wpcp/list-unattached-media", "GET", {
+		limit: 200,
+	});
+	const ids = listed.body.media.map((item: { id: number }) => item.id);
+
+	expect(ids).toContain(orphan.id);
+	expect(ids).not.toContain(inContent.id);
 });

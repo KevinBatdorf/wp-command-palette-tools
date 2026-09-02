@@ -95,7 +95,7 @@ add_action('wp_abilities_api_init', function () {
 
 	wp_register_ability('wpcp/list-unattached-media', [
 		'label' => __('List unattached media', 'command-palette-tools'),
-		'description' => __('Uploads with no parent post and no post using them as a featured image. It does not read post content, so a file placed in a block by URL still shows up here — treat the list as candidates to check, not as files that are safe to delete.', 'command-palette-tools'),
+		'description' => __('Uploads that no post claims: no parent, not a featured image, and not referenced by ID anywhere in post content. Plugins that keep their own record of an attachment — page builders, custom fields, the site logo — are invisible to this, so treat the list as candidates to check rather than files that are safe to delete.', 'command-palette-tools'),
 		'category' => 'maintenance',
 		'input_schema' => [
 			'type' => 'object',
@@ -142,25 +142,18 @@ add_action('wp_abilities_api_init', function () {
 		],
 	]);
 
-	wp_register_ability('wpcp/empty-trash', [
-		'label' => __('Empty the trash', 'command-palette-tools'),
-		'description' => __('Permanently deletes trashed posts, trashed comments and spam. The admin makes you empty each list separately, one post type and one screen at a time.', 'command-palette-tools'),
+	wp_register_ability('wpcp/empty-trashed-posts', [
+		'label' => __('Empty trashed posts', 'command-palette-tools'),
+		'description' => __('Permanently deletes posts sitting in the trash. The admin makes you do it one post type and one screen at a time.', 'command-palette-tools'),
 		'category' => 'maintenance',
 		'input_schema' => [
 			'type' => 'object',
 			'properties' => [
-				'targets' => [
-					'type' => 'array',
-					'title' => __('Delete', 'command-palette-tools'),
-					'description' => __('What to empty.', 'command-palette-tools'),
-					'items' => ['type' => 'string', 'enum' => ['posts', 'comments', 'spam']],
-					'default' => ['posts'],
-				],
 				'post_type' => wpcp_tools_post_type_field(),
 				'older_than_days' => [
 					'type' => 'integer',
 					'title' => __('Older than (days)', 'command-palette-tools'),
-					'description' => __('Counted from when a post was trashed, and from when a comment was written.', 'command-palette-tools'),
+					'description' => __('Counted from when the post was trashed, not from when it was written.', 'command-palette-tools'),
 					'minimum' => 0,
 					'default' => 0,
 				],
@@ -170,8 +163,43 @@ add_action('wp_abilities_api_init', function () {
 			'default' => [],
 		],
 		'output_schema' => ['type' => 'object'],
-		'permission_callback' => 'wpcp_tools_can_empty_trash',
-		'execute_callback' => 'wpcp_tools_empty_trash',
+		'permission_callback' => fn() => current_user_can('delete_others_posts'),
+		'execute_callback' => 'wpcp_tools_empty_trashed_posts',
+		'meta' => [
+			'public' => true,
+			'annotations' => ['readonly' => false, 'destructive' => true, 'idempotent' => true],
+		],
+	]);
+
+	// Split off: a gate reading its input cannot answer a listing, which has none.
+	wp_register_ability('wpcp/delete-spam-and-trashed-comments', [
+		'label' => __('Delete spam and trashed comments', 'command-palette-tools'),
+		'description' => __('Permanently deletes comments marked as spam or moved to the trash. Emptying either list in the admin is a button per screen, and neither has an age filter.', 'command-palette-tools'),
+		'category' => 'maintenance',
+		'input_schema' => [
+			'type' => 'object',
+			'properties' => [
+				'targets' => [
+					'type' => 'array',
+					'title' => __('Delete', 'command-palette-tools'),
+					'items' => ['type' => 'string', 'enum' => ['spam', 'trash']],
+					'default' => ['spam', 'trash'],
+				],
+				'older_than_days' => [
+					'type' => 'integer',
+					'title' => __('Older than (days)', 'command-palette-tools'),
+					'description' => __('Counted from when the comment was written.', 'command-palette-tools'),
+					'minimum' => 0,
+					'default' => 0,
+				],
+				'limit' => wpcp_tools_limit_field(100),
+			],
+			'additionalProperties' => false,
+			'default' => [],
+		],
+		'output_schema' => ['type' => 'object'],
+		'permission_callback' => fn() => current_user_can('moderate_comments'),
+		'execute_callback' => 'wpcp_tools_delete_flagged_comments',
 		'meta' => [
 			'public' => true,
 			'annotations' => ['readonly' => false, 'destructive' => true, 'idempotent' => true],
@@ -315,14 +343,8 @@ function wpcp_tools_list_autoloaded_options($input)
 
 function wpcp_tools_list_unattached_media($input)
 {
-	global $wpdb;
-
 	$limit = max(1, min(200, (int) wpcp_tools_input($input, 'limit', 20)));
 	$days = max(0, (int) wpcp_tools_input($input, 'older_than_days', 0));
-
-	$used = $wpdb->get_col(
-		"SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id'"
-	);
 
 	$args = [
 		'post_type' => 'attachment',
@@ -332,7 +354,7 @@ function wpcp_tools_list_unattached_media($input)
 		'orderby' => 'date',
 		'order' => 'ASC',
 		'fields' => 'ids',
-		'post__not_in' => array_map('intval', $used ?: []),
+		'post__not_in' => wpcp_tools_claimed_attachment_ids(),
 	];
 
 	if ($days > 0) {
@@ -366,6 +388,61 @@ function wpcp_tools_list_unattached_media($input)
 	];
 }
 
+// One pass over the content, rather than one query per candidate.
+function wpcp_tools_claimed_attachment_ids()
+{
+	global $wpdb;
+
+	$claimed = [];
+	foreach ($wpdb->get_col("SELECT DISTINCT meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_thumbnail_id'") ?: [] as $id) {
+		$claimed[(int) $id] = true;
+	}
+
+	$chunk = 200;
+	$offset = 0;
+	do {
+		// Chunked: every post's content at once will not fit in memory.
+		$contents = $wpdb->get_col($wpdb->prepare(
+			"SELECT post_content FROM {$wpdb->posts}
+			WHERE post_status != 'trash' AND post_content != ''
+			ORDER BY ID ASC LIMIT %d OFFSET %d",
+			$chunk,
+			$offset
+		)) ?: [];
+
+		foreach ($contents as $content) {
+			foreach (wpcp_tools_attachment_ids_in($content) as $id) $claimed[$id] = true;
+		}
+
+		$offset += $chunk;
+	} while (count($contents) === $chunk);
+
+	unset($claimed[0]);
+
+	return array_keys($claimed);
+}
+
+// Loose on purpose: calling a file used is the safe way to be wrong here.
+function wpcp_tools_attachment_ids_in($content)
+{
+	$ids = [];
+
+	foreach (['/wp-image-(\d+)/', '/"(?:id|mediaId)":\s*(\d+)/'] as $pattern) {
+		if (preg_match_all($pattern, $content, $matches)) {
+			$ids = array_merge($ids, $matches[1]);
+		}
+	}
+
+	// A gallery keeps a list rather than one id.
+	if (preg_match_all('/"ids":\s*\[([\d,\s]+)\]/', $content, $matches)) {
+		foreach ($matches[1] as $list) {
+			$ids = array_merge($ids, preg_split('/\D+/', $list, -1, PREG_SPLIT_NO_EMPTY));
+		}
+	}
+
+	return array_map('intval', $ids);
+}
+
 function wpcp_tools_delete_expired_transients()
 {
 	$before = wpcp_tools_expired_transient_count();
@@ -393,80 +470,66 @@ function wpcp_tools_expired_transient_count()
 	));
 }
 
-// The capability depends on the input, which check_permissions() hands over.
-function wpcp_tools_can_empty_trash($input)
-{
-	$targets = wpcp_tools_trash_targets($input);
-
-	if (in_array('posts', $targets, true) && !current_user_can('delete_others_posts')) {
-		return false;
-	}
-	if (array_intersect(['comments', 'spam'], $targets) && !current_user_can('moderate_comments')) {
-		return false;
-	}
-
-	return true;
-}
-
-function wpcp_tools_trash_targets($input)
-{
-	$targets = wpcp_tools_input($input, 'targets', ['posts']);
-
-	return is_array($targets) ? array_values(array_intersect($targets, ['posts', 'comments', 'spam'])) : [];
-}
-
-function wpcp_tools_empty_trash($input)
+function wpcp_tools_empty_trashed_posts($input)
 {
 	global $wpdb;
 
-	$targets = wpcp_tools_trash_targets($input);
-	$limit = wpcp_tools_bounded_limit($input, 100);
 	$days = max(0, (int) wpcp_tools_input($input, 'older_than_days', 0));
-	$cutoff = time() - $days * DAY_IN_SECONDS;
-	$deleted = ['posts' => 0, 'comments' => 0, 'spam' => 0];
+	$args = [
+		'post_type' => wpcp_tools_chosen_post_types($input),
+		'post_status' => 'trash',
+		'posts_per_page' => wpcp_tools_bounded_limit($input, 100),
+		'fields' => 'ids',
+	];
 
-	if (in_array('posts', $targets, true)) {
-		$args = [
-			'post_type' => wpcp_tools_chosen_post_types($input),
-			'post_status' => 'trash',
-			'posts_per_page' => $limit,
-			'fields' => 'ids',
-		];
-
-		// When a post was trashed is its own meta; post_date is when it was written.
-		if ($days > 0) {
-			$args['meta_query'] = [[
-				'key' => '_wp_trash_meta_time',
-				'value' => $cutoff,
-				'compare' => '<',
-				'type' => 'NUMERIC',
-			]];
-		}
-
-		foreach ((new WP_Query($args))->posts as $id) {
-			if (wp_delete_post((int) $id, true)) $deleted['posts']++;
-		}
+	// When a post was trashed is its own meta; post_date is when it was written.
+	if ($days > 0) {
+		$args['meta_query'] = [[
+			'key' => '_wp_trash_meta_time',
+			'value' => time() - $days * DAY_IN_SECONDS,
+			'compare' => '<',
+			'type' => 'NUMERIC',
+		]];
 	}
 
-	foreach (['comments' => 'trash', 'spam' => 'spam'] as $target => $status) {
-		if (!in_array($target, $targets, true)) continue;
-
-		$ids = get_comments([
-			'status' => $status,
-			'number' => $limit,
-			'fields' => 'ids',
-			'date_query' => $days > 0 ? [['before' => gmdate('Y-m-d H:i:s', $cutoff), 'column' => 'comment_date_gmt']] : [],
-		]);
-
-		foreach ($ids as $id) {
-			if (wp_delete_comment((int) $id, true)) $deleted[$target]++;
-		}
+	$deleted = 0;
+	foreach ((new WP_Query($args))->posts as $id) {
+		if (wp_delete_post((int) $id, true)) $deleted++;
 	}
 
 	return [
 		'deleted' => $deleted,
-		'trashed_posts_remaining' => (int) $wpdb->get_var(
+		'remaining' => (int) $wpdb->get_var(
 			"SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_status = 'trash'"
 		),
 	];
+}
+
+function wpcp_tools_delete_flagged_comments($input)
+{
+	$targets = wpcp_tools_input($input, 'targets', ['spam', 'trash']);
+	$targets = is_array($targets) ? array_intersect($targets, ['spam', 'trash']) : [];
+	$limit = wpcp_tools_bounded_limit($input, 100);
+	$days = max(0, (int) wpcp_tools_input($input, 'older_than_days', 0));
+
+	$deleted = ['spam' => 0, 'trash' => 0];
+	$remaining = 0;
+	foreach ($targets as $status) {
+		$ids = get_comments([
+			'status' => $status,
+			'number' => $limit,
+			'fields' => 'ids',
+			'date_query' => $days > 0
+				? [['before' => gmdate('Y-m-d H:i:s', time() - $days * DAY_IN_SECONDS), 'column' => 'comment_date_gmt']]
+				: [],
+		]);
+
+		foreach ($ids as $id) {
+			if (wp_delete_comment((int) $id, true)) $deleted[$status]++;
+		}
+
+		$remaining += (int) get_comments(['status' => $status, 'count' => true]);
+	}
+
+	return ['deleted' => $deleted, 'remaining' => $remaining];
 }

@@ -117,12 +117,41 @@ export type CatalogLoader = {
 	clear: () => void;
 };
 
+// Null, not an empty set: a failed probe must filter nothing.
+export const runnableNames = (payload: unknown): Set<string> | null => {
+	const names = (payload as { names?: unknown } | null | undefined)?.names;
+	if (!Array.isArray(names)) return null;
+
+	return new Set(
+		names.filter((name): name is string => typeof name === "string"),
+	);
+};
+
+export const onlyRunnable = (
+	abilities: Ability[],
+	runnable: Set<string> | null,
+) =>
+	runnable ? abilities.filter(({ name }) => runnable.has(name)) : abilities;
+
 export const createCatalogLoader = (
 	fetchAbilities: () => Promise<unknown>,
+	fetchRunnable?: () => Promise<unknown>,
 ): CatalogLoader => {
 	let pending: Promise<Catalog> | null = null;
 
+	const askWhatRuns = async () => {
+		if (!fetchRunnable) return null;
+		try {
+			return runnableNames(await fetchRunnable());
+		} catch {
+			return null;
+		}
+	};
+
 	const fetchCatalog = async (): Promise<Catalog> => {
+		// Started first so the two requests overlap.
+		const runnable = askWhatRuns();
+
 		let payload: unknown;
 		try {
 			payload = await fetchAbilities();
@@ -132,7 +161,7 @@ export const createCatalogLoader = (
 		if (!Array.isArray(payload)) {
 			return { ...EMPTY_CATALOG, error: "unexpected_response" };
 		}
-		const abilities = payload.filter(isAbility);
+		const abilities = onlyRunnable(payload.filter(isAbility), await runnable);
 		return { abilities, hash: catalogHash(abilities), error: null };
 	};
 

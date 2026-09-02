@@ -78,3 +78,21 @@ function wpcp_tools_post_type_field()
 		'description' => __('Leave unset to cover every post type.', 'command-palette-tools'),
 	], wpcp_tools_post_types());
 }
+
+// Another plugin's callback can throw on null input; unknown is not a refusal.
+function wpcp_tools_can_run_ability($ability)
+{
+	try {
+		$allowed = $ability->check_permissions();
+	} catch (Throwable $e) {
+		return null;
+	}
+
+	return is_wp_error($allowed) ? false : (bool) $allowed;
+}
+
+// Not a way around show_in_rest: the same set, listed better.
+function wpcp_tools_visible_ability($ability)
+{
+	return (bool) $ability->get_meta_item('show_in_rest', false);
+}

@@ -222,7 +222,8 @@ function wpcp_tools_find_term($value, $taxonomy)
 function wpcp_tools_can_merge_terms($input)
 {
 	$taxonomy = get_taxonomy((string) wpcp_tools_input($input, 'taxonomy', ''));
-	if (!$taxonomy) return false;
+	// No taxonomy means a listing is asking, not a run: the schema requires one.
+	if (!$taxonomy) return current_user_can('manage_categories');
 
 	return current_user_can($taxonomy->cap->manage_terms)
 		&& current_user_can($taxonomy->cap->delete_terms);

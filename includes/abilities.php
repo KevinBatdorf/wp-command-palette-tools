@@ -11,6 +11,7 @@ require_once __DIR__ . '/abilities/helpers.php';
 require_once __DIR__ . '/abilities/maintenance.php';
 require_once __DIR__ . '/abilities/content.php';
 require_once __DIR__ . '/abilities/meta.php';
+require_once __DIR__ . '/runnable-abilities.php';
 
 // An ability naming an unregistered category is dropped with a notice nobody sees.
 add_action('wp_abilities_api_categories_init', function () {
