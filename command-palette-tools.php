@@ -21,6 +21,10 @@ function wpcp_tools_has_abilities_api()
 	return function_exists('wp_register_ability') && function_exists('wp_get_abilities');
 }
 
+if (wpcp_tools_has_abilities_api()) {
+	require_once plugin_dir_path(__FILE__) . 'includes/abilities.php';
+}
+
 function wpcp_tools_palette_enabled()
 {
 	if (defined('disable_wpcp_tools_palette')) return false;
