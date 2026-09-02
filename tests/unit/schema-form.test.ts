@@ -1,15 +1,28 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import type { JsonSchema } from "../../src/lib/abilities.ts";
 import {
+	activeForm,
+	branchFor,
 	type Field,
 	fieldErrors,
 	initialInput,
 	itemField,
 	readAt,
+	switchBranch,
 	toForm,
+	withDiscriminator,
 	writeAt,
 } from "../../src/lib/schema-form.ts";
+
+// WooCommerce 11.0.1's own, read off the REST listing rather than rewritten.
+const WOO: Record<string, JsonSchema> = JSON.parse(
+	readFileSync(
+		new URL("./fixtures/woocommerce-schemas.json", import.meta.url),
+		"utf8",
+	),
+);
 
 // What all three of core's abilities ship on WP 7.1.
 const CORE_SCHEMA: JsonSchema = {
@@ -400,5 +413,284 @@ describe("fieldErrors", () => {
 		});
 
 		assert.deepEqual(fieldErrors(unshowable, {}), {});
+	});
+});
+
+const UNION: JsonSchema = {
+	type: "object",
+	oneOf: [
+		{
+			type: "object",
+			properties: {
+				kind: { type: "string", enum: ["letter"] },
+				subject: { type: "string" },
+				pages: { type: "integer" },
+			},
+			required: ["kind", "subject"],
+		},
+		{
+			type: "object",
+			properties: {
+				kind: { type: "string", enum: ["parcel"] },
+				subject: { type: "string" },
+				weight: { type: "number" },
+			},
+			required: ["kind", "weight"],
+		},
+	],
+};
+
+describe("toForm on a union", () => {
+	it("finds the property the arms disagree on", () => {
+		const form = toForm(UNION);
+
+		assert.equal(form.unsupported, null);
+		assert.equal(form.union?.discriminator, "kind");
+		assert.deepEqual(
+			form.union?.branches.map(({ name }) => name),
+			["letter", "parcel"],
+		);
+	});
+
+	// Picking the arm already says which it is, so the arm must not ask again.
+	it("leaves the discriminator out of the arm's own fields", () => {
+		const form = toForm(UNION);
+		const letter = activeForm(form, "0");
+
+		assert.deepEqual(
+			letter.fields.map(({ key }) => key),
+			["subject", "pages"],
+		);
+		assert.equal(
+			letter.fields.find(({ key }) => key === "subject")?.required,
+			true,
+		);
+	});
+
+	it("puts no fields at the top level", () => {
+		assert.deepEqual(toForm(UNION).fields, []);
+	});
+
+	it("falls back to the first arm for a key that is not there", () => {
+		const form = toForm(UNION);
+
+		assert.equal(branchFor(form, null)?.name, "letter");
+		assert.equal(branchFor(form, "nope")?.name, "letter");
+	});
+
+	it("prefers a title the schema supplies over the pinned value", () => {
+		const titled: JsonSchema = {
+			oneOf: [
+				{
+					type: "object",
+					title: "A letter",
+					properties: { kind: { type: "string", enum: ["letter"] } },
+				},
+				{
+					type: "object",
+					properties: { kind: { type: "string", enum: ["parcel"] } },
+				},
+			],
+		};
+
+		assert.deepEqual(
+			toForm(titled).union?.branches.map(({ name }) => name),
+			["A letter", "parcel"],
+		);
+	});
+
+	it("names nothing when no property is pinned twice", () => {
+		const loose: JsonSchema = {
+			oneOf: [
+				{ type: "object", properties: { a: { type: "string" } } },
+				{ type: "object", properties: { b: { type: "string" } } },
+			],
+		};
+		const form = toForm(loose);
+
+		assert.equal(form.union?.discriminator, null);
+		assert.deepEqual(
+			form.union?.branches.map(({ name }) => name),
+			[null, null],
+		);
+	});
+
+	it("still refuses alternation it cannot render", () => {
+		assert.equal(
+			toForm({ anyOf: [{ type: "string" }] }).unsupported,
+			"alternatives",
+		);
+		assert.equal(
+			toForm({ allOf: [{ type: "object" }] }).unsupported,
+			"alternatives",
+		);
+		// One arm is not a choice, and an arm that declares no object is not one.
+		assert.equal(
+			toForm({ oneOf: [{ type: "object", properties: {} }] }).unsupported,
+			"alternatives",
+		);
+		assert.equal(
+			toForm({
+				oneOf: [{ properties: { a: {} } }, { properties: { b: {} } }],
+			}).unsupported,
+			"alternatives",
+		);
+		assert.equal(
+			toForm({ oneOf: [{ type: "string" }, { type: "number" }] }).unsupported,
+			"alternatives",
+		);
+	});
+
+	it("refuses alternation inside an arm rather than at the top", () => {
+		const nested: JsonSchema = {
+			oneOf: [
+				{
+					type: "object",
+					properties: {
+						kind: { type: "string", enum: ["one"] },
+						odd: { oneOf: [{ type: "string" }] },
+					},
+				},
+				{
+					type: "object",
+					properties: { kind: { type: "string", enum: ["two"] } },
+				},
+			],
+		};
+		const form = toForm(nested);
+
+		assert.equal(form.unsupported, null);
+		const odd = activeForm(form, "0").fields.find(({ key }) => key === "odd");
+		assert.equal(odd?.control, "unsupported");
+		assert.equal(
+			odd?.control === "unsupported" ? odd.reason : null,
+			"alternatives",
+		);
+	});
+});
+
+describe("switchBranch", () => {
+	const form = toForm(UNION);
+
+	it("writes the arm's own value into the discriminator", () => {
+		const input = switchBranch(form, "0", "1", {});
+
+		assert.equal(readAt(input, ["kind"]), "parcel");
+	});
+
+	it("carries a value whose field survives the switch", () => {
+		const input = switchBranch(form, "0", "1", {
+			kind: "letter",
+			subject: "keep me",
+			pages: "3",
+		});
+
+		assert.equal(readAt(input, ["subject"]), "keep me");
+	});
+
+	it("drops a value the arm being entered has no field for", () => {
+		const input = switchBranch(form, "0", "1", {
+			subject: "keep me",
+			pages: "3",
+		});
+
+		assert.equal(readAt(input, ["pages"]), undefined);
+	});
+
+	// Two arms can name the same property as different kinds of value.
+	it("drops a value whose field changed control", () => {
+		const retyped: JsonSchema = {
+			oneOf: [
+				{
+					type: "object",
+					properties: {
+						kind: { type: "string", enum: ["a"] },
+						size: { type: "string" },
+					},
+				},
+				{
+					type: "object",
+					properties: {
+						kind: { type: "string", enum: ["b"] },
+						size: { type: "boolean" },
+					},
+				},
+			],
+		};
+		const input = switchBranch(toForm(retyped), "0", "1", { size: "large" });
+
+		assert.equal(readAt(input, ["size"]), undefined);
+	});
+});
+
+describe("toForm on WooCommerce's own unions", () => {
+	it("renders product-create as five named arms", () => {
+		const form = toForm(WOO["product-create"]);
+
+		assert.equal(form.unsupported, null);
+		assert.equal(form.union?.discriminator, "product_type_alias");
+		assert.deepEqual(
+			form.union?.branches.map(({ name }) => name),
+			["physical", "virtual", "digital", "affiliate", "grouped"],
+		);
+	});
+
+	it("gives every product-create arm a form with fields", () => {
+		for (const branch of toForm(WOO["product-create"]).union?.branches ?? []) {
+			assert.equal(branch.form.unsupported, null, branch.name ?? "?");
+			assert.ok(branch.form.fields.length, branch.name ?? "?");
+			// The Select carries it, so no arm asks for the type again.
+			assert.equal(
+				branch.form.fields.some(({ key }) => key === "product_type_alias"),
+				false,
+			);
+		}
+	});
+
+	it("leaves product-update's unpinned first arm unnamed", () => {
+		const form = toForm(WOO["product-update"]);
+
+		assert.equal(form.union?.discriminator, "product_type_alias");
+		assert.deepEqual(
+			form.union?.branches.map(({ name }) => name),
+			[null, "physical", "virtual", "digital", "affiliate", "grouped"],
+		);
+		// Nothing pinned means nothing to write when that arm is chosen.
+		assert.equal(form.union?.branches[0].value, undefined);
+	});
+
+	it("keeps each arm's own required fields", () => {
+		const form = toForm(WOO["product-create"]);
+		const physical = activeForm(form, "0");
+
+		assert.deepEqual(fieldErrors(physical, initialInput(physical)), {
+			name: { code: "required" },
+		});
+	});
+});
+
+describe("withDiscriminator", () => {
+	const form = toForm(UNION);
+
+	// coerceInput rebuilds from the arm's fields, which this is not one of.
+	it("puts the arm's value back onto a payload built without it", () => {
+		const sent = withDiscriminator(form, "1", { name: "Ada" });
+
+		assert.deepEqual(sent, { name: "Ada", kind: "parcel" });
+	});
+
+	it("leaves a payload alone when the arm pins nothing", () => {
+		const unpinned = toForm(WOO["product-update"]);
+
+		assert.deepEqual(withDiscriminator(unpinned, "0", { id: 7 }), { id: 7 });
+	});
+
+	it("leaves a payload alone when there is no union", () => {
+		const plain = toForm({
+			type: "object",
+			properties: { a: { type: "string" } },
+		});
+
+		assert.deepEqual(withDiscriminator(plain, null, { a: "x" }), { a: "x" });
 	});
 });

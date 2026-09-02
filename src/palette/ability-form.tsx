@@ -27,16 +27,19 @@ import {
 	runRequest,
 } from "../lib/ability-run";
 import {
+	activeForm,
 	emptyValue,
 	type Field,
 	type FieldError,
 	fieldErrors,
-	initialInput,
 	itemField,
 	type Option,
 	readAt,
+	startingInput,
+	switchBranch,
 	toForm,
 	type UnsupportedReason,
+	withDiscriminator,
 	writeAt,
 } from "../lib/schema-form";
 
@@ -415,16 +418,23 @@ export const AbilityForm = ({
 		() => toForm(ability.input_schema, ability.label),
 		[ability],
 	);
-	const [input, setInput] = useState<unknown>(() => initialInput(form));
+	const [branch, setBranch] = useState<string | null>(
+		() => form.union?.branches[0].key ?? null,
+	);
+	// The arm being filled in, which for anything but a union is the form itself.
+	const active = useMemo(() => activeForm(form, branch), [form, branch]);
+	const [input, setInput] = useState<unknown>(() =>
+		startingInput(form, branch),
+	);
 	const [run, setRun] = useState<RunState>(IDLE);
-	const errors = fieldErrors(form, input);
+	const errors = fieldErrors(active, input);
 	const container = useRef<HTMLFormElement>(null);
 	const confirmRun = useRef<HTMLButtonElement>(null);
 	const outcome = useRef<HTMLDivElement>(null);
 
 	const confirm = confirmKind(ability);
-	const runnable = !form.unsupported && !!runHref(ability);
-	const blocked = !!Object.keys(errors).length || hasUnfillable(form);
+	const runnable = !active.unsupported && !!runHref(ability);
+	const blocked = !!Object.keys(errors).length || hasUnfillable(active);
 
 	useEffect(() => {
 		container.current?.querySelector<HTMLElement>("input, select")?.focus();
@@ -449,7 +459,11 @@ export const AbilityForm = ({
 	}, []);
 
 	const send = useCallback(async () => {
-		const request = runRequest(ability, coerceInput(form, input));
+		// coerceInput builds from the arm's fields, which the discriminator is not one of.
+		const request = runRequest(
+			ability,
+			withDiscriminator(form, branch, coerceInput(active, input)),
+		);
 		if (!request) return;
 
 		setRun({ status: "running" });
@@ -466,7 +480,7 @@ export const AbilityForm = ({
 					__("The ability could not be run.", "command-palette-tools"),
 			});
 		}
-	}, [ability, form, input]);
+	}, [ability, active, branch, form, input]);
 
 	const submit = (event: React.FormEvent) => {
 		event.preventDefault();
@@ -494,12 +508,36 @@ export const AbilityForm = ({
 			{ability.description && (
 				<p className="wpcp-tools-palette__help">{ability.description}</p>
 			)}
-			{form.unsupported ? (
+			{form.union && (
+				<SelectControl
+					__nextHasNoMarginBottom
+					label={form.union.label ?? __("Kind", "command-palette-tools")}
+					value={branch ?? form.union.branches[0].key}
+					options={form.union.branches.map((option, index) => ({
+						label:
+							option.name ??
+							sprintf(
+								/* translators: %d: position of an unnamed choice in the list. */
+								__("Option %d", "command-palette-tools"),
+								index + 1,
+							),
+						value: option.key,
+					}))}
+					onChange={(key) => {
+						setInput(switchBranch(form, branch, key, input));
+						setBranch(key);
+						setRun((current) =>
+							current.status === "running" ? current : IDLE,
+						);
+					}}
+				/>
+			)}
+			{active.unsupported ? (
 				<Notice status="warning" isDismissible={false}>
-					{reasonText(form.unsupported)}
+					{reasonText(active.unsupported)}
 				</Notice>
 			) : (
-				form.fields.map((field) => (
+				active.fields.map((field) => (
 					<FieldRow
 						key={field.key}
 						field={field}
@@ -509,7 +547,7 @@ export const AbilityForm = ({
 					/>
 				))
 			)}
-			{!form.unsupported && !form.fields.length && (
+			{!active.unsupported && !form.union && !active.fields.length && (
 				<p className="wpcp-tools-palette__help">
 					{__("This ability takes no input.", "command-palette-tools")}
 				</p>
