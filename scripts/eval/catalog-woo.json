@@ -15,6 +15,41 @@
 		"description": "Returns core details about the site's runtime context for diagnostics and compatibility (environment, PHP runtime, database server info, WordPress version). By default returns all fields, or optionally a filtered subset."
 	},
 	{
+		"name": "woocommerce/orders-query",
+		"label": "Query orders",
+		"description": "Find orders by ID or common order filters."
+	},
+	{
+		"name": "woocommerce/order-add-note",
+		"label": "Add order note",
+		"description": "Add a note to an order."
+	},
+	{
+		"name": "woocommerce/order-update-status",
+		"label": "Update order status",
+		"description": "Update an order status."
+	},
+	{
+		"name": "woocommerce/products-query",
+		"label": "Query products",
+		"description": "Find products by ID or common catalog filters."
+	},
+	{
+		"name": "woocommerce/product-create",
+		"label": "Create product",
+		"description": "Create a product using supported catalog fields."
+	},
+	{
+		"name": "woocommerce/product-delete",
+		"label": "Delete product",
+		"description": "Delete, trash, or restore a product."
+	},
+	{
+		"name": "woocommerce/product-update",
+		"label": "Update product",
+		"description": "Update an existing product using supported catalog fields."
+	},
+	{
 		"name": "wpcp/list-cron-events",
 		"label": "List scheduled events",
 		"description": "Every WP-Cron event this site has scheduled, when it is next due, and how far past due it already is. WordPress ships no screen for this."

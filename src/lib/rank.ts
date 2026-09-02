@@ -101,7 +101,7 @@ export type Similarity = (id: string) => number;
 
 const LEXICAL_MAX = LABEL_WEIGHT * EXACT;
 
-// Lowest floor with no false positives; higher loses real matches.
+// Lower surfaces more real matches; on a bigger catalog it also surfaces noise.
 const SEMANTIC_FLOOR = 0.2;
 
 // Under half, so a label match always outranks a merely related description.
