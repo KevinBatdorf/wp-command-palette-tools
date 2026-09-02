@@ -1,110 +1,129 @@
-import type { FeatureExtractionPipeline } from "@huggingface/transformers";
-import type { Ability } from "./abilities";
+import type { Ability } from "./abilities.ts";
+import { readVocabulary, tokenize, type Vocabulary } from "./wordpiece.ts";
 
-const MODEL = "Xenova/all-MiniLM-L6-v2";
+const MAGIC = "WPCPEMB1";
 
-// The catalog hash cannot see a model change, so the key carries the revision.
-const REVISION = "751bff37182d3f1213fa05d7196b954e230abad9";
+// In the URL, or a model swap serves cached weights beside a new vocabulary.
+export const MODEL = {
+	repo: "minishlab/potion-base-8M",
+	revision: "bf8b056651a2c21b8d2565580b8569da283cab23",
+};
 
-const DB_NAME = "command-palette-tools";
-const STORE = "vectors";
+type Weights = {
+	rows: number;
+	dim: number;
+	scales: Float32Array;
+	quantized: Int8Array;
+};
 
-type Vectors = Record<string, number[]>;
+// Views into the fetched buffer, so 7MB of weights is never copied.
+export const readWeights = (buffer: ArrayBuffer): Weights => {
+	const head = new DataView(buffer);
+	const magic = String.fromCharCode(...new Uint8Array(buffer, 0, MAGIC.length));
+	if (magic !== MAGIC) throw new Error(`not an embedding matrix: ${magic}`);
 
-const request = <T>(source: IDBRequest<T>) =>
-	new Promise<T>((resolve, reject) => {
-		source.onsuccess = () => resolve(source.result);
-		source.onerror = () => reject(source.error);
-	});
+	const rows = head.getUint32(8, true);
+	const dim = head.getUint32(12, true);
 
-const openDb = () =>
-	new Promise<IDBDatabase>((resolve, reject) => {
-		const opening = indexedDB.open(DB_NAME, 1);
-		opening.onupgradeneeded = () => opening.result.createObjectStore(STORE);
-		opening.onsuccess = () => resolve(opening.result);
-		opening.onerror = () => reject(opening.error);
-	});
+	return {
+		rows,
+		dim,
+		scales: new Float32Array(buffer, 16, rows),
+		quantized: new Int8Array(buffer, 16 + 4 * rows, rows * dim),
+	};
+};
 
-// Private windows refuse IndexedDB outright, and recomputing beats throwing.
-const read = async (key: string) => {
-	try {
-		const db = await openDb();
-		const store = db.transaction(STORE, "readonly").objectStore(STORE);
-		return (await request<Vectors | undefined>(store.get(key))) ?? null;
-	} catch {
-		return null;
+// No runtime: the model is one row per token, meaned and normalised.
+export const vectorize = (
+	{ dim, scales, quantized }: Weights,
+	vocabulary: Vocabulary,
+	text: string,
+) => {
+	const ids = tokenize(vocabulary, text);
+	const vector = new Float64Array(dim);
+
+	for (const id of ids) {
+		const scale = scales[id] ?? 0;
+		const base = id * dim;
+		for (let d = 0; d < dim; d++) {
+			vector[d] += (quantized[base + d] ?? 0) * scale;
+		}
 	}
+
+	const count = ids.length || 1;
+	let norm = 0;
+	for (let d = 0; d < dim; d++) {
+		vector[d] /= count;
+		norm += vector[d] * vector[d];
+	}
+
+	return Array.from(vector, (value) => value / (Math.sqrt(norm) || 1));
 };
 
-const write = async (key: string, vectors: Vectors) => {
-	try {
-		const db = await openDb();
-		const store = db.transaction(STORE, "readwrite").objectStore(STORE);
-		await request(store.put(vectors, key));
-	} catch {}
+type Model = { weights: Weights; vocabulary: Vocabulary };
+
+const get = async (url: string) => {
+	const response = await fetch(url);
+	if (!response.ok) throw new Error(`${url}: ${response.status}`);
+
+	return response;
 };
+
+let model: Promise<Model> | null = null;
+
+const load = () =>
+	(model ??= (async () => {
+		const at = (file: string) =>
+			`${window.wpcpTools?.modelPath ?? ""}${MODEL.repo}/${file}?v=${MODEL.revision}`;
+
+		const [matrix, vocabulary] = await Promise.all([
+			get(at("embeddings.bin")).then((response) => response.arrayBuffer()),
+			get(at("vocab.txt")).then((response) => response.text()),
+		]);
+
+		return {
+			weights: readWeights(matrix),
+			vocabulary: readVocabulary(vocabulary),
+		};
+		// Kept out of the cache on failure, so the next keystroke tries again.
+	})().catch((error) => {
+		model = null;
+		throw error;
+	}));
 
 // The name tokenizes as punctuation, so only what a person wrote is embedded.
-const text = ({ label, description }: Ability) =>
+const describe = ({ label, description }: Ability) =>
 	description ? `${label}. ${description}` : label;
-
-let pipe: Promise<FeatureExtractionPipeline> | null = null;
-
-const extractor = () =>
-	(pipe ??= (async () => {
-		const { env, pipeline } = await import("@huggingface/transformers");
-		const paths = window.wpcpTools;
-
-		env.allowLocalModels = true;
-		env.allowRemoteModels = false;
-		env.localModelPath = paths?.modelPath ?? "";
-		// Left unset it falls back to a CDN, which is the one thing w.org forbids.
-		const wasm = env.backends.onnx.wasm;
-		if (!wasm) throw new Error("onnxruntime exposes no wasm settings");
-
-		wasm.wasmPaths = paths?.ortPath ?? "";
-
-		return pipeline<"feature-extraction">("feature-extraction", MODEL, {
-			dtype: "q8",
-		});
-	})());
-
-const embed = async (texts: string[]) => {
-	const pipeline = await extractor();
-	const output = await pipeline(texts, { pooling: "mean", normalize: true });
-
-	return output.tolist() as number[][];
-};
-
-const dot = (a: number[], b: number[]) =>
-	a.reduce((sum, value, i) => sum + value * (b[i] ?? 0), 0);
 
 export type Embedder = {
 	ready: (abilities: Ability[], hash: string) => Promise<void>;
 	similarity: (query: string) => Promise<(id: string) => number>;
 };
 
+const dot = (a: number[], b: number[]) =>
+	a.reduce((sum, value, i) => sum + value * (b[i] ?? 0), 0);
+
 export const createEmbedder = (): Embedder => {
-	let vectors: Vectors = {};
+	let vectors: Record<string, number[]> = {};
+	// A lookup and a mean, so recomputing costs less than storing the result.
+	let embedded: string | null = null;
 
 	return {
 		ready: async (abilities, hash) => {
-			const key = `${MODEL}@${REVISION}/${hash}`;
-			const cached = await read(key);
-			if (cached) {
-				vectors = cached;
-				return;
-			}
+			if (embedded === hash) return;
 
-			const embedded = await embed(abilities.map(text));
+			const { weights, vocabulary } = await load();
 			vectors = Object.fromEntries(
-				abilities.map(({ name }, i) => [name, embedded[i] ?? []]),
+				abilities.map((ability) => [
+					ability.name,
+					vectorize(weights, vocabulary, describe(ability)),
+				]),
 			);
-			await write(key, vectors);
+			embedded = hash;
 		},
 		similarity: async (query) => {
-			const [asked] = await embed([query]);
-			if (!asked) return () => 0;
+			const { weights, vocabulary } = await load();
+			const asked = vectorize(weights, vocabulary, query);
 
 			return (id) => {
 				const vector = vectors[id];

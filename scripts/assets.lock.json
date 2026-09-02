@@ -1,30 +1,17 @@
 {
-	"repo": "Xenova/all-MiniLM-L6-v2",
-	"revision": "751bff37182d3f1213fa05d7196b954e230abad9",
+	"repo": "minishlab/potion-base-8M",
+	"revision": "bf8b056651a2c21b8d2565580b8569da283cab23",
+	"source": {
+		"model.safetensors": "f65d0f325faadc1e"
+	},
 	"files": {
-		"config.json": {
-			"bytes": 650,
-			"sha256": "7135149f7cffa1a5"
+		"embeddings.bin": {
+			"bytes": 7677296,
+			"sha256": "d573fb4bcb00d73e"
 		},
-		"tokenizer.json": {
-			"bytes": 711661,
-			"sha256": "da0e79933b9ed517"
-		},
-		"tokenizer_config.json": {
-			"bytes": 366,
-			"sha256": "9261e7d79b44c819"
-		},
-		"onnx/model_quantized.onnx": {
-			"bytes": 22972370,
-			"sha256": "afdb6f1a0e45b715"
-		},
-		"ort-wasm-simd-threaded.wasm": {
-			"bytes": 11133407,
-			"sha256": "f061472c6e77d6d5"
-		},
-		"ort-wasm-simd-threaded.mjs": {
-			"bytes": 20856,
-			"sha256": "43c25054b6b9ac00"
+		"vocab.txt": {
+			"bytes": 219690,
+			"sha256": "1394523a67ddd404"
 		}
 	}
 }

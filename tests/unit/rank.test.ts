@@ -5,33 +5,14 @@ import similarityFixture from "./fixtures/similarities.json" with {
 	type: "json",
 };
 
+// Real potion-8M output for this catalog, not numbers invented for the test.
+const { catalog: registered, similarities } = similarityFixture;
+
 // Close to what core and a plugin actually register.
-const catalog: Rankable[] = [
-	{
-		id: "core/get-site-info",
-		label: "Get Site Information",
-		description: "Returns site information configured in WordPress.",
-		keywords: ["core/get-site-info"],
-	},
-	{
-		id: "core/get-user-info",
-		label: "Get User Information",
-		description: "Returns information about the current user.",
-		keywords: ["core/get-user-info"],
-	},
-	{
-		id: "core/get-environment-info",
-		label: "Get Environment Info",
-		description: "Returns the PHP and WordPress versions of this site.",
-		keywords: ["core/get-environment-info"],
-	},
-	{
-		id: "woo/update-price",
-		label: "Update product price",
-		description: "Sets the price on a product in the store.",
-		keywords: ["woo/update-price"],
-	},
-];
+const catalog: Rankable[] = registered.map((ability) => ({
+	...ability,
+	keywords: [ability.id],
+}));
 
 const ids = (results: Rankable[]) => results.map(({ id }) => id);
 
@@ -99,8 +80,6 @@ describe("score", () => {
 });
 
 describe("rankFused", () => {
-	// Real MiniLM output for this catalog, not numbers invented for the test.
-	const { similarities } = similarityFixture;
 	const of = (query: keyof typeof similarities): ((id: string) => number) => {
 		const row: Record<string, number> = similarities[query];
 		return (id) => row[id] ?? 0;

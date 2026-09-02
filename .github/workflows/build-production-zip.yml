@@ -35,6 +35,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-${{ steps.setup-node.outputs.node-version }}-npm-
 
+      - name: Cache the model the build packs
+        uses: actions/cache@v6
+        with:
+          path: models
+          key: wpcp-model-${{ hashFiles('scripts/assets.lock.json') }}
+
       - name: npm install and build
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
@@ -65,4 +71,5 @@ jobs:
             !${{ github.workspace }}/assets/
             !${{ github.workspace }}/playwright-report/
             !${{ github.workspace }}/test-results/
+            !${{ github.workspace }}/models/.cache/
             !${{ github.workspace }}/package-lock.json

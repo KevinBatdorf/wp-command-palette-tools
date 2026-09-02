@@ -26,12 +26,6 @@ loader.options.postcssOptions.plugins = [
 	}),
 ];
 
-// onnxruntime's default browser build wants a 25MB WebGPU wasm we do not ship.
-config.resolve.alias = {
-	...config.resolve.alias,
-	"onnxruntime-web$": "onnxruntime-web/wasm",
-};
-
 config.entry = {
 	math: "./src/commands/math/math.tsx",
 	color: "./src/commands/color/color.tsx",
