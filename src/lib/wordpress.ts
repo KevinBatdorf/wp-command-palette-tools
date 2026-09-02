@@ -40,7 +40,7 @@ declare global {
 			};
 		};
 		// Localized by the plugin: the front end prints no `userSettings`.
-		wpcpTools?: { uid?: string; modelPath?: string; ortPath?: string };
+		wpcpTools?: { uid?: string; modelPath?: string };
 	}
 }
 

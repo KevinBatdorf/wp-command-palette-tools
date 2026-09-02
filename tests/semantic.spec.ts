@@ -2,8 +2,8 @@ import { expect, test } from "@wordpress/e2e-test-utils-playwright";
 
 const modifier = process.platform === "darwin" ? "Meta" : "Control";
 
-// The model and the runtime wasm are 35MB off a local PHP server.
-const MODEL_LOAD = 150_000;
+// 7.5MB of weights and vocabulary off a local PHP server, then a pooled mean.
+const MODEL_LOAD = 60_000;
 
 test.beforeEach(async ({ requestUtils }) => {
 	test.setTimeout(180_000);
@@ -20,12 +20,35 @@ test("finds an ability the query shares no word with", async ({
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await page.keyboard.type("who am i logged in as");
 
-	// "who" lands nowhere, so the lexical pass rejects the whole catalog first.
-	await expect(palette.getByText("No results found.")).toBeVisible();
-
+	// Every word has to land for the lexical pass to admit anything, and "who"
+	// lands nowhere.
 	await expect(
 		palette.getByRole("option", { name: /Get User Information/ }),
 	).toBeVisible({ timeout: MODEL_LOAD });
+});
+
+test("still answers lexically when the weights will not load", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	// Read on first use, so pointing it at nothing is a model that cannot load.
+	await page.evaluate(() => {
+		window.wpcpTools = { ...window.wpcpTools, modelPath: "does-not-exist/" };
+	});
+
+	await page.keyboard.press(`${modifier}+j`);
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	const input = palette.getByRole("combobox");
+
+	await input.fill("who am i logged in as");
+	await expect(palette.getByText("No results found.")).toBeVisible();
+
+	// A query sharing a word still finds its ability.
+	await input.fill("user");
+	await expect(
+		palette.getByRole("option", { name: /Get User Information/ }),
+	).toBeVisible();
 });
 
 test("answers nothing for a query the catalog has no ability for", async ({
