@@ -5,23 +5,18 @@
 	animation-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* no-prefix */
-.components-modal__screen-overlay.is-animating-out
-.wpcp-tools-palette.components-modal__frame {
-	animation-name: wpcp-tools-palette-close;
-	animation-timing-function: ease;
-}
-
 @media not (prefers-reduced-motion) {
 	/* no-prefix */
 	.wpcp-tools-palette.components-modal__frame {
 		animation-duration: 120ms;
 	}
 
+	/* Modal unmounts on animationend for its own animation name, so the name
+	   stays and only the duration goes. */
 	/* no-prefix */
 	.components-modal__screen-overlay.is-animating-out
 	.wpcp-tools-palette.components-modal__frame {
-		animation-duration: 80ms;
+		animation-duration: 1ms;
 	}
 }
 
@@ -33,15 +28,6 @@
 	to {
 		opacity: 1;
 		transform: scale(1);
-	}
-}
-
-@keyframes wpcp-tools-palette-close {
-	from {
-		opacity: 1;
-	}
-	to {
-		opacity: 0;
 	}
 }
 
