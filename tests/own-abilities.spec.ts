@@ -180,11 +180,53 @@ test("one of ours runs read-only from the palette", async ({ admin, page }) => {
 		.click();
 
 	// Readonly, so core takes it on GET and the palette asks for no confirm.
-	await palette.getByRole("button", { name: "Run", exact: true }).click();
-
 	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
-	await expect(palette.getByText('"total_bytes"')).toBeVisible();
-	await expect(palette.getByText('"rewrite_rules"')).toBeVisible();
+	await expect(
+		palette.getByRole("columnheader", { name: "Option" }),
+	).toBeVisible();
+	await expect(
+		palette.getByRole("cell", { name: "rewrite_rules", exact: true }),
+	).toBeVisible();
+	await expect(palette.getByText("Total size")).toBeVisible();
+});
+
+test("a scheduled event is run from the row that listed it", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+	await page.keyboard.type("scheduled events");
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: "List scheduled events" }).click();
+
+	const row = palette.getByRole("row").filter({ hasText: "wp_version_check" });
+	await expect(row).toBeVisible();
+	await row.getByRole("button", { name: "Run now" }).click();
+
+	// The hook is required there, and nobody typed it.
+	await expect(
+		palette.getByRole("heading", { name: "Run a scheduled event now" }),
+	).toBeVisible();
+	await expect(palette.getByRole("combobox", { name: /Event/ })).toHaveValue(
+		JSON.stringify("wp_version_check"),
+	);
+
+	await palette.getByRole("button", { name: "Run", exact: true }).click();
+	// Firing a job changes things, so it stops at the confirm like any other.
+	await palette.getByRole("button", { name: "Yes, run it" }).click();
+
+	// The select still holds the hook, so the answer is read off the result.
+	await expect(
+		palette.getByRole("definition").filter({ hasText: "wp_version_check" }),
+	).toBeVisible();
+
+	// Back goes to the listing that sent us here, not out to the search.
+	await palette.getByRole("button", { name: "Back to results" }).click();
+	await expect(
+		palette.getByRole("heading", { name: "List scheduled events" }),
+	).toBeVisible();
 });
 
 test("a destructive one stops at a confirm before it runs", async ({
@@ -212,7 +254,7 @@ test("a destructive one stops at a confirm before it runs", async ({
 
 	await palette.getByRole("button", { name: "Run anyway" }).click();
 	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
-	await expect(palette.getByText('"expired_remaining"')).toBeVisible();
+	await expect(palette.getByText("Still expired")).toBeVisible();
 });
 
 test("everything bundled here is refused to a user without manage_options", async ({

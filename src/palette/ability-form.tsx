@@ -37,6 +37,7 @@ import {
 	runFailure,
 	runRequest,
 } from "../lib/ability-run";
+import { type Action, resultView, runsOnOpen } from "../lib/result-views";
 import {
 	activeForm,
 	emptyValue,
@@ -55,6 +56,7 @@ import {
 	withDiscriminator,
 	writeAt,
 } from "../lib/schema-form";
+import { AbilityResult } from "./ability-result";
 
 type Setter = (path: string[], value: unknown) => void;
 
@@ -408,7 +410,7 @@ type RunState =
 	| { status: "idle" }
 	| { status: "confirming" }
 	| { status: "running" }
-	| { status: "done"; result: unknown }
+	| { status: "done"; result: unknown; sent: unknown }
 	| { status: "failed"; message: string };
 
 const IDLE: RunState = { status: "idle" };
@@ -420,23 +422,6 @@ const confirmText = (kind: ConfirmKind) =>
 				"command-palette-tools",
 			)
 		: __("This ability makes changes to your site.", "command-palette-tools");
-
-const RunResult = ({ result }: { result: unknown }) => (
-	<div>
-		<h3 className="wpcp-tools-palette__result-heading">
-			{__("Result", "command-palette-tools")}
-		</h3>
-		{result === null || result === undefined ? (
-			<p className="wpcp-tools-palette__help">
-				{__("The ability ran and returned nothing.", "command-palette-tools")}
-			</p>
-		) : (
-			<pre className="wpcp-tools-palette__result">
-				{typeof result === "string" ? result : JSON.stringify(result, null, 2)}
-			</pre>
-		)}
-	</div>
-);
 
 const RunShortcut = () => (
 	<kbd
@@ -450,9 +435,16 @@ const RunShortcut = () => (
 export const AbilityForm = ({
 	ability,
 	onBack,
+	given,
+	offers,
+	follow,
 }: {
 	ability: Ability;
 	onBack: () => void;
+	// Filled by a result row, so an id never has to be typed.
+	given?: Record<string, unknown>;
+	offers: (name: string) => boolean;
+	follow: (action: Action) => void;
 }) => {
 	const form = useMemo(
 		() => toForm(ability.input_schema, ability.label),
@@ -463,9 +455,13 @@ export const AbilityForm = ({
 	);
 	// The arm being filled in, which for anything but a union is the form itself.
 	const active = useMemo(() => activeForm(form, branch), [form, branch]);
-	const [input, setInput] = useState<unknown>(() =>
-		startingInput(form, branch),
-	);
+	const [input, setInput] = useState<unknown>(() => {
+		const starting = startingInput(form, branch);
+		return Object.entries(given ?? {}).reduce(
+			(current, [key, value]) => writeAt(current, [key], value),
+			starting,
+		);
+	});
 	const [run, setRun] = useState<RunState>(IDLE);
 	const [showOptions, setShowOptions] = useState(false);
 	// An untouched field is not wrong yet: its error waits for an edit or a run.
@@ -493,6 +489,10 @@ export const AbilityForm = ({
 
 	const confirm = confirmKind(ability);
 	const runnable = !active.unsupported && !!runHref(ability);
+	const opens = runsOnOpen(
+		ability.meta?.annotations?.readonly,
+		required.map((field) => field.key),
+	);
 	// Only what no edit can fix disables Run; a fixable error is shown on the attempt.
 	const stuck = !runnable || hasUnfillable(active);
 	const blocked = stuck || !!Object.keys(errors).length;
@@ -505,6 +505,12 @@ export const AbilityForm = ({
 			)
 			?.focus();
 	}, []);
+
+	useEffect(() => {
+		if (!opens || !runnable) return;
+		void send();
+		// Options changed after this are run by hand, so it fires once per ability.
+	}, [ability]);
 
 	// After the render that marks it: the class is what finds the field.
 	useEffect(() => {
@@ -546,7 +552,7 @@ export const AbilityForm = ({
 		setRun({ status: "running" });
 		try {
 			const result = await apiFetch<unknown>(request);
-			setRun({ status: "done", result });
+			setRun({ status: "done", result, sent: request.data?.input ?? input });
 			speak(__("The ability ran.", "command-palette-tools"));
 		} catch (error) {
 			// The notice announces itself, so nothing is spoken here.
@@ -705,7 +711,14 @@ export const AbilityForm = ({
 				)}
 				{run.status === "done" && (
 					<div ref={outcome}>
-						<RunResult result={run.result} />
+						<h3 className="wpcp-tools-palette__result-heading">
+							{__("Result", "command-palette-tools")}
+						</h3>
+						<AbilityResult
+							view={resultView(ability.name, run.result, run.sent)}
+							offers={offers}
+							follow={follow}
+						/>
 					</div>
 				)}
 				{run.status === "failed" && (

@@ -20,6 +20,7 @@ import {
 import { abilityCatalog } from "../lib/ability-catalog";
 import { createEmbedder } from "../lib/embed";
 import { rank, rankFused, type Similarity } from "../lib/rank";
+import type { Action } from "../lib/result-views";
 import {
 	colorTools,
 	funTools,
@@ -118,7 +119,10 @@ export const PaletteMenu = () => {
 	const [search, setSearch] = useState("");
 	const [catalog, setCatalog] = useState<Catalog | null>(null);
 	const [recent, setRecent] = useState(recents.list);
-	const [picked, setPicked] = useState<Ability | null>(null);
+	// A stack: Back from a followed ability returns to the rows that sent you.
+	const [trail, setTrail] = useState<
+		{ ability: Ability; given?: Record<string, unknown> }[]
+	>([]);
 	const [semantic, setSemantic] = useState<{
 		query: string;
 		similarity: Similarity;
@@ -141,14 +145,16 @@ export const PaletteMenu = () => {
 
 	const close = useCallback(() => {
 		setSearch("");
-		setPicked(null);
+		setTrail([]);
 		setIsOpen(false);
 	}, []);
 
 	const back = useCallback(() => {
 		setDirection("back");
-		setPicked(null);
+		setTrail((current) => current.slice(0, -1));
 	}, []);
+
+	const picked = trail.length ? trail[trail.length - 1] : null;
 
 	// Modal routes Escape here, so without this a form's Escape closes it all.
 	const requestClose = useCallback(() => {
@@ -208,8 +214,30 @@ export const PaletteMenu = () => {
 	const selectAbility = useCallback((ability: Ability) => {
 		setRecent(recents.remember(ability.name));
 		setDirection("forward");
-		setPicked(ability);
+		setTrail([{ ability }]);
 	}, []);
+
+	const byName = useMemo(
+		() => new Map((catalog?.abilities ?? []).map((one) => [one.name, one])),
+		[catalog],
+	);
+
+	const offers = useCallback((name: string) => byName.has(name), [byName]);
+
+	const follow = useCallback(
+		(action: Action) => {
+			const next = byName.get(action.ability);
+			if (!next) return;
+
+			setRecent(recents.remember(next.name));
+			setDirection("forward");
+			setTrail((current) => [
+				...current,
+				{ ability: next, given: action.input },
+			]);
+		},
+		[byName],
+	);
 
 	// Math and colour are computed from the query, so never scored against it.
 	const tools = useMemo<Result[]>(
@@ -323,7 +351,14 @@ export const PaletteMenu = () => {
 				className={`wpcp-tools-palette__view is-${direction}`}
 			>
 				{picked ? (
-					<AbilityForm key={picked.name} ability={picked} onBack={back} />
+					<AbilityForm
+						key={`${trail.length}-${picked.ability.name}`}
+						ability={picked.ability}
+						given={picked.given}
+						offers={offers}
+						follow={follow}
+						onBack={back}
+					/>
 				) : (
 					<div className="commands-command-menu__container">
 						<Command

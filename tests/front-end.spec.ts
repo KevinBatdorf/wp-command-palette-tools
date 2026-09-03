@@ -56,14 +56,9 @@ test("an ability runs from the front end", async ({ page }) => {
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get Site Information/ }).click();
 
-	await palette.getByRole("button", { name: "Show 1 option" }).click();
-	const fields = palette.getByRole("group", { name: "Fields" });
-	await fields.getByRole("checkbox", { name: "url", exact: true }).check();
-	await palette.getByRole("button", { name: "Run", exact: true }).click();
-
 	// Nothing outside wp-admin would authenticate without api-fetch's nonce.
 	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
-	await expect(palette.getByText('"url"')).toBeVisible();
+	await expect(palette.getByText(/127\.0\.0\.1/).first()).toBeVisible();
 });
 
 test("recents follow the user between the front end and wp-admin", async ({

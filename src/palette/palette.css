@@ -388,3 +388,130 @@
 	white-space: pre-wrap;
 	overflow-wrap: break-word;
 }
+
+/* no-prefix */
+.wpcp-tools-palette__outcome {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__stats > div {
+	display: flex;
+	align-items: baseline;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 2px;
+	background: #f0f0f0;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__stats dt {
+	color: #757575;
+	font-size: 11px;
+	text-transform: uppercase;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__stats dd {
+	margin: 0;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+	font-weight: 600;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__facts {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 4px 16px;
+	margin: 0;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__facts > div {
+	display: contents;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__facts dt {
+	color: #757575;
+	font-size: 12px;
+	line-height: 20px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__facts dd {
+	margin: 0;
+	font-size: 13px;
+	line-height: 20px;
+	overflow-wrap: anywhere;
+}
+
+/* A table of any width scrolls itself rather than widening the palette. */
+/* no-prefix */
+.wpcp-tools-palette__table-scroll {
+	overflow-x: auto;
+	margin: 0 -16px;
+	padding: 0 16px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__table th {
+	padding: 0 12px 6px 0;
+	color: #757575;
+	font-size: 11px;
+	font-weight: 500;
+	text-align: left;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__table td {
+	padding: 6px 12px 6px 0;
+	border-top: 1px solid #f0f0f0;
+	vertical-align: middle;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__table td:not(:first-child) {
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__table td:first-child {
+	min-width: 140px;
+	overflow-wrap: anywhere;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__table td:last-child {
+	padding-right: 0;
+	text-align: right;
+}
+
+/* no-prefix */
+.wpcp-tools-palette__row-actions {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 4px;
+}

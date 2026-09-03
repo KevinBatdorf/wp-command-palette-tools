@@ -260,7 +260,7 @@ test("Escape steps back out of a form before it closes the palette", async ({
 	await expect(palette).toBeHidden();
 });
 
-test("a readonly ability runs without a confirm and shows what came back", async ({
+test("a readonly ability answers as soon as it is opened", async ({
 	admin,
 	page,
 }) => {
@@ -270,14 +270,36 @@ test("a readonly ability runs without a confirm and shows what came back", async
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get Site Information/ }).click();
 
+	// Nothing was clicked: readonly with nothing required runs on open.
+	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
+	await expect(palette.getByRole("definition").first()).toBeVisible();
+	await expect(palette.getByText(/127\.0\.0\.1/).first()).toBeVisible();
+	// The keys it returned are read as labels rather than printed as JSON.
+	await expect(palette.getByText('"url"')).toBeHidden();
+});
+
+test("a filtered re-run replaces the answer it opened with", async ({
+	admin,
+	page,
+}) => {
+	await admin.visitAdminPage("plugins.php");
+	await page.keyboard.press(`${modifier}+j`);
+
+	const palette = page.getByRole("dialog", { name: "Ability palette" });
+	await palette.getByRole("option", { name: /Get Site Information/ }).click();
+	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
+
 	await palette.getByRole("button", { name: "Show 1 option" }).click();
 	const fields = palette.getByRole("group", { name: "Fields" });
 	await fields.getByRole("checkbox", { name: "url", exact: true }).check();
+	// Editing an input drops the answer it no longer describes.
+	await expect(palette.getByRole("heading", { name: "Result" })).toBeHidden();
 
 	await palette.getByRole("button", { name: "Run", exact: true }).click();
-
-	// Readonly, so core answers this one on GET alone.
 	await expect(palette.getByRole("heading", { name: "Result" })).toBeVisible();
-	await expect(palette.getByText('"url"')).toBeVisible();
-	await expect(palette.getByText(/127\.0\.0\.1/)).toBeVisible();
+
+	// A filtered run answers with fewer keys, so with fewer labels.
+	const labels = palette.getByRole("term");
+	await expect(labels.filter({ hasText: /^url$/ })).toBeVisible();
+	await expect(labels.filter({ hasText: /^admin_email$/ })).toHaveCount(0);
 });

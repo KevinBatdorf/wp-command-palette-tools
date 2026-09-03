@@ -1,0 +1,416 @@
+{
+	"core/get-user-info": {
+		"id": 1,
+		"display_name": "admin",
+		"user_nicename": "admin",
+		"user_login": "admin",
+		"roles": ["administrator"],
+		"locale": "en_US",
+		"first_name": "",
+		"last_name": "",
+		"nickname": "admin",
+		"description": "",
+		"user_url": "http://127.0.0.1:9501"
+	},
+	"core/get-site-info": {
+		"name": "My WordPress Website",
+		"description": "",
+		"url": "http://127.0.0.1:9501",
+		"wpurl": "http://127.0.0.1:9501",
+		"admin_email": "admin@localhost.com",
+		"charset": "UTF-8",
+		"language": "en-US",
+		"version": "7.1"
+	},
+	"core/get-environment-info": {
+		"environment": "production",
+		"php_version": "8.5.8",
+		"db_server_info": "8.0.38-mysql-on-sqlite-3.0.0",
+		"wp_version": "7.1"
+	},
+	"woocommerce/products-query": {
+		"products": [
+			{
+				"id": 14,
+				"name": "Cast Iron Pan",
+				"slug": "cast-iron-pan",
+				"permalink": "http://127.0.0.1:9501/product/cast-iron-pan/",
+				"type": "simple",
+				"status": "publish",
+				"sku": "",
+				"currency": "USD",
+				"currency_symbol": "$",
+				"price": "89.00",
+				"regular_price": "89.00",
+				"sale_price": "",
+				"stock_status": "instock",
+				"stock_quantity": null,
+				"manage_stock": false,
+				"virtual": false,
+				"downloadable": false,
+				"external_url": null,
+				"button_text": null,
+				"grouped_products": [],
+				"date_created": "2026-09-03T01:34:12",
+				"date_created_gmt": "2026-09-03T01:34:12",
+				"date_modified": "2026-09-03T01:34:12",
+				"date_modified_gmt": "2026-09-03T01:34:12"
+			},
+			{
+				"id": 13,
+				"name": "Linen Apron",
+				"slug": "linen-apron",
+				"permalink": "http://127.0.0.1:9501/product/linen-apron/",
+				"type": "simple",
+				"status": "publish",
+				"sku": "",
+				"currency": "USD",
+				"currency_symbol": "$",
+				"price": "42.00",
+				"regular_price": "42.00",
+				"sale_price": "",
+				"stock_status": "instock",
+				"stock_quantity": null,
+				"manage_stock": false,
+				"virtual": false,
+				"downloadable": false,
+				"external_url": null,
+				"button_text": null,
+				"grouped_products": [],
+				"date_created": "2026-09-03T01:34:11",
+				"date_created_gmt": "2026-09-03T01:34:11",
+				"date_modified": "2026-09-03T01:34:11",
+				"date_modified_gmt": "2026-09-03T01:34:11"
+			},
+			{
+				"id": 12,
+				"name": "Stoneware Mug",
+				"slug": "stoneware-mug",
+				"permalink": "http://127.0.0.1:9501/product/stoneware-mug/",
+				"type": "simple",
+				"status": "publish",
+				"sku": "",
+				"currency": "USD",
+				"currency_symbol": "$",
+				"price": "18.00",
+				"regular_price": "18.00",
+				"sale_price": "",
+				"stock_status": "instock",
+				"stock_quantity": null,
+				"manage_stock": false,
+				"virtual": false,
+				"downloadable": false,
+				"external_url": null,
+				"button_text": null,
+				"grouped_products": [],
+				"date_created": "2026-09-03T01:34:10",
+				"date_created_gmt": "2026-09-03T01:34:10",
+				"date_modified": "2026-09-03T01:34:10",
+				"date_modified_gmt": "2026-09-03T01:34:10"
+			}
+		],
+		"total_pages": 1,
+		"page": 1,
+		"per_page": 10
+	},
+	"woocommerce/orders-query": {
+		"orders": [
+			{
+				"id": 17,
+				"status": "on-hold",
+				"currency": "USD",
+				"currency_symbol": "$",
+				"total": "267.00",
+				"customer_id": 0,
+				"billing_email": "alan@example.com",
+				"payment_method": "",
+				"payment_method_title": "",
+				"date_created": "2026-09-03T01:34:35",
+				"date_created_gmt": "2026-09-03T01:34:35",
+				"date_modified": "2026-09-03T01:34:35",
+				"date_modified_gmt": "2026-09-03T01:34:35"
+			},
+			{
+				"id": 16,
+				"status": "pending",
+				"currency": "USD",
+				"currency_symbol": "$",
+				"total": "131.00",
+				"customer_id": 0,
+				"billing_email": "grace@example.com",
+				"payment_method": "",
+				"payment_method_title": "",
+				"date_created": "2026-09-03T01:34:32",
+				"date_created_gmt": "2026-09-03T01:34:32",
+				"date_modified": "2026-09-03T01:34:32",
+				"date_modified_gmt": "2026-09-03T01:34:32"
+			},
+			{
+				"id": 15,
+				"status": "processing",
+				"currency": "USD",
+				"currency_symbol": "$",
+				"total": "36.00",
+				"customer_id": 0,
+				"billing_email": "ada@example.com",
+				"payment_method": "",
+				"payment_method_title": "",
+				"date_created": "2026-09-03T01:34:29",
+				"date_created_gmt": "2026-09-03T01:34:29",
+				"date_modified": "2026-09-03T01:34:30",
+				"date_modified_gmt": "2026-09-03T01:34:30"
+			}
+		],
+		"total_pages": 1,
+		"page": 1,
+		"per_page": 10
+	},
+	"wpcp/list-cron-events": {
+		"events": [
+			{
+				"hook": "recovery_mode_clean_expired_keys",
+				"schedule": "daily",
+				"next_run_gmt": "2026-09-02T16:15:32+00:00",
+				"seconds_overdue": 33554,
+				"args": []
+			},
+			{
+				"hook": "wp_privacy_delete_old_export_files",
+				"schedule": "hourly",
+				"next_run_gmt": "2026-09-02T16:15:33+00:00",
+				"seconds_overdue": 33553,
+				"args": []
+			},
+			{
+				"hook": "wp_privacy_personal_data_cleanup_requests",
+				"schedule": "daily",
+				"next_run_gmt": "2026-09-02T16:15:33+00:00",
+				"seconds_overdue": 33553,
+				"args": []
+			},
+			{
+				"hook": "wp_version_check",
+				"schedule": "twicedaily",
+				"next_run_gmt": "2026-09-02T16:15:33+00:00",
+				"seconds_overdue": 33553,
+				"args": []
+			},
+			{
+				"hook": "wp_update_plugins",
+				"schedule": "twicedaily",
+				"next_run_gmt": "2026-09-02T16:15:33+00:00",
+				"seconds_overdue": 33553,
+				"args": []
+			},
+			{
+				"hook": "wp_update_themes",
+				"schedule": "twicedaily",
+				"next_run_gmt": "2026-09-02T16:15:33+00:00",
+				"seconds_overdue": 33553,
+				"args": []
+			},
+			{
+				"hook": "action_scheduler_run_queue",
+				"schedule": "every_minute",
+				"next_run_gmt": "2026-09-02T16:16:05+00:00",
+				"seconds_overdue": 33521,
+				"args": ["WP Cron"]
+			},
+			{
+				"hook": "jetpack_clean_nonces",
+				"schedule": "hourly",
+				"next_run_gmt": "2026-09-02T16:16:07+00:00",
+				"seconds_overdue": 33519,
+				"args": []
+			},
+			{
+				"hook": "jetpack_v2_heartbeat",
+				"schedule": "daily",
+				"next_run_gmt": "2026-09-02T16:16:07+00:00",
+				"seconds_overdue": 33519,
+				"args": []
+			},
+			{
+				"hook": "wc_admin_process_orders_milestone",
+				"schedule": "hourly",
+				"next_run_gmt": "2026-09-02T16:16:07+00:00",
+				"seconds_overdue": 33519,
+				"args": []
+			},
+			{
+				"hook": "woocommerce_marketplace_cron_fetch_promotions",
+				"schedule": "twicedaily",
+				"next_run_gmt": "2026-09-02T16:16:08+00:00",
+				"seconds_overdue": 33518,
+				"args": []
+			},
+			{
+				"hook": "wp_scheduled_delete",
+				"schedule": "daily",
+				"next_run_gmt": "2026-09-02T16:16:49+00:00",
+				"seconds_overdue": 33477,
+				"args": []
+			},
+			{
+				"hook": "delete_expired_transients",
+				"schedule": "daily",
+				"next_run_gmt": "2026-09-02T16:16:49+00:00",
+				"seconds_overdue": 33477,
+				"args": []
+			},
+			{
+				"hook": "wp_update_user_counts",
+				"schedule": "twicedaily",
+				"next_run_gmt": "2026-09-02T16:16:50+00:00",
+				"seconds_overdue": 33476,
+				"args": []
+			},
+			{
+				"hook": "wp_scheduled_auto_draft_delete",
+				"schedule": "daily",
+				"next_run_gmt": "2026-09-02T16:16:55+00:00",
+				"seconds_overdue": 33471,
+				"args": []
+			},
+			{
+				"hook": "wc_admin_unsnooze_admin_notes",
+				"schedule": "hourly",
+				"next_run_gmt": "2026-09-02T16:16:58+00:00",
+				"seconds_overdue": 33468,
+				"args": []
+			},
+			{
+				"hook": "wp_update_comment_type_batch",
+				"schedule": "once",
+				"next_run_gmt": "2026-09-02T16:17:50+00:00",
+				"seconds_overdue": 33416,
+				"args": []
+			},
+			{
+				"hook": "wp_site_health_scheduled_check",
+				"schedule": "weekly",
+				"next_run_gmt": "2026-09-03T16:15:32+00:00",
+				"seconds_overdue": 0,
+				"args": []
+			}
+		],
+		"total": 18,
+		"overdue": 17,
+		"wp_cron_disabled": false
+	},
+	"wpcp/list-autoloaded-options": {
+		"options": [
+			{
+				"name": "_transient_wp_core_block_css_files",
+				"bytes": 23776
+			},
+			{
+				"name": "rewrite_rules",
+				"bytes": 19777
+			},
+			{
+				"name": "wp_user_roles",
+				"bytes": 7811
+			},
+			{
+				"name": "cron",
+				"bytes": 3026
+			},
+			{
+				"name": "widget_block",
+				"bytes": 890
+			},
+			{
+				"name": "woocommerce_paypal_settings",
+				"bytes": 856
+			},
+			{
+				"name": "sidebars_widgets",
+				"bytes": 198
+			},
+			{
+				"name": "woocommerce_permalinks",
+				"bytes": 182
+			},
+			{
+				"name": "woocommerce_registration_privacy_policy_text",
+				"bytes": 175
+			},
+			{
+				"name": "woocommerce_gateway_order",
+				"bytes": 165
+			},
+			{
+				"name": "woocommerce_checkout_privacy_policy_text",
+				"bytes": 161
+			},
+			{
+				"name": "active_plugins",
+				"bytes": 107
+			},
+			{
+				"name": "woocommerce_maxmind_geolocation_settings",
+				"bytes": 69
+			},
+			{
+				"name": "jetpack_connection_active_plugins",
+				"bytes": 61
+			},
+			{
+				"name": "_transient_jetpack_autoloader_plugin_paths",
+				"bytes": 47
+			},
+			{
+				"name": "woocommerce_onboarding_profile",
+				"bytes": 44
+			},
+			{
+				"name": "woocommerce_store_id",
+				"bytes": 36
+			},
+			{
+				"name": "permalink_structure",
+				"bytes": 36
+			},
+			{
+				"name": "_transient_doing_cron",
+				"bytes": 33
+			},
+			{
+				"name": "widget_pages",
+				"bytes": 30
+			}
+		],
+		"total_count": 286,
+		"total_bytes": 59411
+	},
+	"wpcp/list-unattached-media": {
+		"media": [
+			{
+				"id": 4,
+				"title": "woocommerce-placeholder",
+				"url": "http://127.0.0.1:9501/wp-content/uploads/woocommerce-placeholder.webp",
+				"mime_type": "image/webp",
+				"uploaded_gmt": "2026-09-02 16:16:06",
+				"bytes": 9892,
+				"edit_url": "http://127.0.0.1:9501/wp-admin/post.php?post=4&action=edit"
+			}
+		],
+		"total": 1,
+		"remaining": 0
+	},
+	"wpcp/search-replace-content": {
+		"dry_run": true,
+		"posts": [
+			{
+				"id": 18,
+				"title": "A keepsake box",
+				"replacements": 2,
+				"edit_url": "http://127.0.0.1:9501/wp-admin/post.php?post=18&action=edit"
+			}
+		],
+		"posts_changed": 1,
+		"replacements": 2,
+		"remaining": 0
+	}
+}
