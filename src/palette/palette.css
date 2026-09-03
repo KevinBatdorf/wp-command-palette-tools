@@ -20,6 +20,14 @@
 	}
 }
 
+/* Core's 50ms delay leaves the backdrop on screen after the frame has gone. */
+/* no-prefix */
+.components-modal__screen-overlay.wpcp-tools-palette-overlay.is-animating-out {
+	animation-duration: 1ms;
+	animation-delay: 0s;
+	animation-fill-mode: forwards;
+}
+
 @keyframes wpcp-tools-palette-open {
 	from {
 		opacity: 0;

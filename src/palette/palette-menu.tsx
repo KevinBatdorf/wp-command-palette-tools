@@ -340,7 +340,7 @@ export const PaletteMenu = () => {
 	return (
 		<Modal
 			className="commands-command-menu wpcp-tools-palette"
-			overlayClassName="commands-command-menu__overlay"
+			overlayClassName="commands-command-menu__overlay wpcp-tools-palette-overlay"
 			onRequestClose={requestClose}
 			__experimentalHideHeader
 			size="medium"
