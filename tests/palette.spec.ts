@@ -253,8 +253,26 @@ test("Escape steps back out of a form before it closes the palette", async ({
 		palette.getByRole("heading", { name: "Get User Information" }),
 	).toBeVisible();
 
+	// The container itself has to survive the step back, not be rebuilt.
+	const frame = palette.locator("xpath=.");
+	const before = await frame.evaluate((node) => {
+		const seen = { removed: false };
+		new MutationObserver(() => {
+			if (!node.isConnected) seen.removed = true;
+		}).observe(node.parentElement as Node, { childList: true });
+		(window as unknown as { __seen: typeof seen }).__seen = seen;
+		return true;
+	});
+	expect(before).toBe(true);
+
 	await page.keyboard.press("Escape");
 	await expect(palette.getByRole("option").first()).toBeVisible();
+	expect(
+		await page.evaluate(
+			() =>
+				(window as unknown as { __seen: { removed: boolean } }).__seen.removed,
+		),
+	).toBe(false);
 
 	await page.keyboard.press("Escape");
 	await expect(palette).toBeHidden();

@@ -341,6 +341,9 @@ export const PaletteMenu = () => {
 		<Modal
 			className="commands-command-menu wpcp-tools-palette"
 			overlayClassName="commands-command-menu__overlay wpcp-tools-palette-overlay"
+			// Modal's Escape animates the container out before asking, even when
+			// the answer is to stay open.
+			shouldCloseOnEsc={false}
 			onRequestClose={requestClose}
 			__experimentalHideHeader
 			size="medium"
@@ -349,6 +352,11 @@ export const PaletteMenu = () => {
 			<div
 				key={picked ? "form" : "list"}
 				className={`wpcp-tools-palette__view is-${direction}`}
+				onKeyDown={(event) => {
+					if (event.key !== "Escape") return;
+					event.preventDefault();
+					requestClose();
+				}}
 			>
 				{picked ? (
 					<AbilityForm
