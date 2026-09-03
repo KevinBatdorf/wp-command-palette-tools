@@ -7,9 +7,11 @@ import {
 	branchFor,
 	type Field,
 	fieldErrors,
+	hasErrorIn,
 	initialInput,
 	itemField,
 	readAt,
+	splitFields,
 	switchBranch,
 	toForm,
 	withDiscriminator,
@@ -692,5 +694,99 @@ describe("withDiscriminator", () => {
 		});
 
 		assert.deepEqual(withDiscriminator(plain, null, { a: "x" }), { a: "x" });
+	});
+});
+
+describe("splitFields", () => {
+	it("shows what is required and keeps the rest behind the disclosure", () => {
+		const form = toForm({
+			type: "object",
+			properties: {
+				search: { type: "string" },
+				replace: { type: "string" },
+				dry_run: { type: "boolean", default: true },
+			},
+			required: ["search"],
+		});
+		const { required, optional } = splitFields(form.fields);
+
+		assert.deepEqual(
+			required.map((found) => found.key),
+			["search"],
+		);
+		assert.deepEqual(
+			optional.map((found) => found.key),
+			["replace", "dry_run"],
+		);
+	});
+
+	it("counts a group as required when a field inside it is", () => {
+		const form = toForm({
+			type: "object",
+			properties: {
+				address: {
+					type: "object",
+					properties: { city: { type: "string" } },
+					required: ["city"],
+				},
+				notes: {
+					type: "object",
+					properties: { text: { type: "string" } },
+				},
+			},
+		});
+		const { required, optional } = splitFields(form.fields);
+
+		assert.deepEqual(
+			required.map((found) => found.key),
+			["address"],
+		);
+		assert.deepEqual(
+			optional.map((found) => found.key),
+			["notes"],
+		);
+	});
+
+	it("keeps the schema's order on both sides", () => {
+		const form = toForm({
+			type: "object",
+			properties: {
+				a: { type: "string" },
+				b: { type: "string" },
+				c: { type: "string" },
+				d: { type: "string" },
+			},
+			required: ["d", "b"],
+		});
+		const { required, optional } = splitFields(form.fields);
+
+		assert.deepEqual(
+			required.map((found) => found.key),
+			["b", "d"],
+		);
+		assert.deepEqual(
+			optional.map((found) => found.key),
+			["a", "c"],
+		);
+	});
+});
+
+describe("hasErrorIn", () => {
+	it("claims an error keyed by the field and by any row under it", () => {
+		const form = toForm({
+			type: "object",
+			properties: {
+				tags: { type: "array", items: { type: "string", minLength: 2 } },
+				tagsLike: { type: "string" },
+			},
+		});
+		const tags = field(form, "tags");
+		const tagsLike = field(form, "tagsLike");
+		const errors = fieldErrors(form, { tags: ["x"] });
+
+		assert.deepEqual(Object.keys(errors), ["tags.0"]);
+		assert.equal(hasErrorIn(tags, errors), true);
+		// A prefix match on the name alone would blame the wrong field.
+		assert.equal(hasErrorIn(tagsLike, errors), false);
 	});
 });

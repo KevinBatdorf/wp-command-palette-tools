@@ -565,6 +565,20 @@ const fillIndex = (field: Field, index: string): Field => {
 	return next;
 };
 
+const asksForInput = (field: Field): boolean =>
+	field.control === "group" ? field.fields.some(asksForInput) : field.required;
+
+export const splitFields = (fields: Field[]) => ({
+	required: fields.filter(asksForInput),
+	optional: fields.filter((field) => !asksForInput(field)),
+});
+
+// A list row keys its error under the field's own key plus its index.
+export const hasErrorIn = (field: Field, errors: Record<string, unknown>) =>
+	Object.keys(errors).some(
+		(key) => key === field.key || key.startsWith(`${field.key}.`),
+	);
+
 export const itemField = (item: Field, index: number) =>
 	fillIndex(item, String(index));
 

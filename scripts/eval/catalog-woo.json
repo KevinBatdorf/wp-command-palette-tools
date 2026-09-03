@@ -103,15 +103,5 @@
 		"name": "wpcp/search-replace-content",
 		"label": "Find and replace across posts",
 		"description": "Replaces a string everywhere it appears in post titles, content or excerpts. Matching is case sensitive, and it reports what it would change without changing anything until you turn the dry run off. Doing this in WordPress otherwise means WP-CLI or a plugin."
-	},
-	{
-		"name": "wpcp/list-abilities",
-		"label": "List abilities",
-		"description": "Every ability registered on this site, filtered how you ask, and whether you are allowed to run it. The REST listing core provides is gated on nothing but being logged in, so it will happily show you abilities that answer 403."
-	},
-	{
-		"name": "wpcp/describe-ability",
-		"label": "Describe an ability",
-		"description": "Everything one ability declares: what it takes, what it returns, whether it is destructive, and whether you may run it."
 	}
 ]

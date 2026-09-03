@@ -2,7 +2,7 @@ import { expect, test } from "@wordpress/e2e-test-utils-playwright";
 
 const modifier = process.platform === "darwin" ? "Meta" : "Control";
 
-// Core's three plus the thirteen this plugin bundles.
+// Core's three plus the eleven this plugin bundles.
 const STOCK_ABILITIES = [
 	"Get Site Information",
 	"Get User Information",
@@ -18,8 +18,6 @@ const STOCK_ABILITIES = [
 	"Close comments on old posts",
 	"Publish posts that missed their schedule",
 	"Find and replace across posts",
-	"List abilities",
-	"Describe an ability",
 ];
 
 test.beforeEach(async ({ requestUtils }) => {
@@ -198,7 +196,9 @@ test("an ability picked once comes back under Recent", async ({
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get User Information/ }).click();
 	// Picking opens the ability's form, so the palette stays up.
-	await expect(palette.getByRole("group", { name: "Fields" })).toBeVisible();
+	await expect(
+		palette.getByRole("heading", { name: "Get User Information" }),
+	).toBeVisible();
 
 	await admin.visitAdminPage("options-general.php");
 	await page.keyboard.press(`${modifier}+j`);
@@ -222,7 +222,10 @@ test("picking an ability opens a form built from its input schema", async ({
 	await expect(
 		palette.getByRole("heading", { name: "Get Site Information" }),
 	).toBeVisible();
-	// Core's only input is an array of the field names it will return.
+	// Core's only input is an array of the field names it will return, and it
+	// is optional, so the form keeps it folded away until asked.
+	await expect(palette.getByRole("group", { name: "Fields" })).toBeHidden();
+	await palette.getByRole("button", { name: "Show 1 option" }).click();
 	const fields = palette.getByRole("group", { name: "Fields" });
 	await expect(fields.getByRole("checkbox")).toHaveCount(8);
 	for (const name of ["name", "url", "wpurl", "admin_email", "version"]) {
@@ -246,7 +249,9 @@ test("Escape steps back out of a form before it closes the palette", async ({
 
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get User Information/ }).click();
-	await expect(palette.getByRole("group", { name: "Fields" })).toBeVisible();
+	await expect(
+		palette.getByRole("heading", { name: "Get User Information" }),
+	).toBeVisible();
 
 	await page.keyboard.press("Escape");
 	await expect(palette.getByRole("option").first()).toBeVisible();
@@ -265,6 +270,7 @@ test("a readonly ability runs without a confirm and shows what came back", async
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get Site Information/ }).click();
 
+	await palette.getByRole("button", { name: "Show 1 option" }).click();
 	const fields = palette.getByRole("group", { name: "Fields" });
 	await fields.getByRole("checkbox", { name: "url", exact: true }).check();
 

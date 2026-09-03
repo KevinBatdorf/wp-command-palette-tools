@@ -107,11 +107,13 @@ export const catalogState = (catalog: Catalog): CatalogState => {
 };
 
 // The listing carries no namespace field of its own.
+// WooCommerce names its category after itself, which would read twice.
 export const abilitySource = ({ name, category }: Ability) => {
 	const [namespace] = name.split("/");
 	if (!namespace || namespace === name) return category;
+	if (!category || category === namespace) return namespace;
 
-	return category ? `${namespace}:${category}` : namespace;
+	return `${namespace} · ${category}`;
 };
 
 export type CatalogLoader = {

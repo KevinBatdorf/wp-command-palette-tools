@@ -225,26 +225,6 @@
 		"kind": "intent"
 	},
 	{
-		"query": "what can this thing do",
-		"expect": "wpcp/list-abilities",
-		"kind": "intent"
-	},
-	{
-		"query": "show me everything available to me",
-		"expect": "wpcp/list-abilities",
-		"kind": "intent"
-	},
-	{
-		"query": "explain what one of these does",
-		"expect": "wpcp/describe-ability",
-		"kind": "intent"
-	},
-	{
-		"query": "what does this action take as input",
-		"expect": "wpcp/describe-ability",
-		"kind": "intent"
-	},
-	{
 		"query": "site information",
 		"expect": "core/get-site-info",
 		"kind": "overlap"
@@ -327,16 +307,6 @@
 	{
 		"query": "replace across posts",
 		"expect": "wpcp/search-replace-content",
-		"kind": "overlap"
-	},
-	{
-		"query": "list abilities",
-		"expect": "wpcp/list-abilities",
-		"kind": "overlap"
-	},
-	{
-		"query": "describe an ability",
-		"expect": "wpcp/describe-ability",
 		"kind": "overlap"
 	},
 	{

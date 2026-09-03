@@ -199,10 +199,19 @@ describe("catalogState", () => {
 
 describe("abilitySource", () => {
 	it("names the plugin the ability came from alongside its category", () => {
-		assert.equal(abilitySource(ability()), "core:site");
+		assert.equal(abilitySource(ability()), "core · site");
 		assert.equal(
 			abilitySource(ability({ name: "woo/update-price", category: "product" })),
-			"woo:product",
+			"woo · product",
+		);
+	});
+
+	it("says a name once when the category repeats the namespace", () => {
+		assert.equal(
+			abilitySource(
+				ability({ name: "woocommerce/orders-query", category: "woocommerce" }),
+			),
+			"woocommerce",
 		);
 	});
 

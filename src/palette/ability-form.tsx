@@ -16,8 +16,19 @@ import {
 	useState,
 } from "@wordpress/element";
 import { __, _n, isRTL, sprintf } from "@wordpress/i18n";
-import { chevronLeft, chevronRight, closeSmall } from "@wordpress/icons";
-import { type Ability, runHref } from "../lib/abilities";
+import {
+	chevronDown,
+	chevronLeft,
+	chevronRight,
+	chevronUp,
+	closeSmall,
+} from "@wordpress/icons";
+import {
+	displayShortcut,
+	isKeyboardEvent,
+	shortcutAriaLabel,
+} from "@wordpress/keycodes";
+import { type Ability, abilitySource, runHref } from "../lib/abilities";
 import {
 	type ConfirmKind,
 	coerceInput,
@@ -32,9 +43,11 @@ import {
 	type Field,
 	type FieldError,
 	fieldErrors,
+	hasErrorIn,
 	itemField,
 	type Option,
 	readAt,
+	splitFields,
 	startingInput,
 	switchBranch,
 	toForm,
@@ -179,19 +192,31 @@ const optionValue = (options: Option[], key: string) =>
 const optionKey = (options: Option[], value: unknown) =>
 	options.find((option) => option.value === value)?.key ?? "";
 
-const FieldRow = ({
-	field,
-	input,
-	errors,
-	set,
-	label,
-}: {
+type RowProps = {
 	field: Field;
 	input: unknown;
 	errors: Record<string, FieldError>;
 	set: Setter;
 	label?: string;
-}) => {
+};
+
+const FieldRow = (props: RowProps) => {
+	const error = props.errors[props.field.key];
+
+	return (
+		<div
+			className={
+				error
+					? "wpcp-tools-palette__field has-error"
+					: "wpcp-tools-palette__field"
+			}
+		>
+			<FieldControl {...props} />
+		</div>
+	);
+};
+
+const FieldControl = ({ field, input, errors, set, label }: RowProps) => {
 	const value = readAt(input, field.path);
 	const error = errors[field.key];
 	const help = error ? errorText(error) : field.description;
@@ -207,6 +232,7 @@ const FieldRow = ({
 					minLength={field.minLength}
 					maxLength={field.maxLength}
 					help={help}
+					aria-invalid={!!error}
 					onChange={(next) => set(field.path, next)}
 				/>
 			);
@@ -222,6 +248,7 @@ const FieldRow = ({
 					max={field.maximum}
 					step={field.integer ? 1 : "any"}
 					help={help}
+					aria-invalid={!!error}
 					onChange={(next) => set(field.path, next)}
 				/>
 			);
@@ -256,6 +283,7 @@ const FieldRow = ({
 						})),
 					]}
 					help={help}
+					aria-invalid={!!error}
 					onChange={(key) => set(field.path, optionValue(field.options, key))}
 				/>
 			);
@@ -267,27 +295,29 @@ const FieldRow = ({
 			return (
 				<fieldset className="wpcp-tools-palette__fieldset">
 					<legend>{labelText(field, label)}</legend>
-					{field.options.map((option) => (
-						<CheckboxControl
-							__nextHasNoMarginBottom
-							key={option.key}
-							label={option.label}
-							checked={isPicked(option)}
-							onChange={(checked) =>
-								// Rebuilt from the schema's order, so ticks do not reorder it.
-								set(
-									field.path,
-									field.options
-										.filter((candidate) =>
-											candidate.key === option.key
-												? checked
-												: isPicked(candidate),
-										)
-										.map((candidate) => candidate.value),
-								)
-							}
-						/>
-					))}
+					<div className="wpcp-tools-palette__choices">
+						{field.options.map((option) => (
+							<CheckboxControl
+								__nextHasNoMarginBottom
+								key={option.key}
+								label={option.label}
+								checked={isPicked(option)}
+								onChange={(checked) =>
+									// Rebuilt from the schema's order, so ticks do not reorder it.
+									set(
+										field.path,
+										field.options
+											.filter((candidate) =>
+												candidate.key === option.key
+													? checked
+													: isPicked(candidate),
+											)
+											.map((candidate) => candidate.value),
+									)
+								}
+							/>
+						))}
+					</div>
 					{help && <p className="wpcp-tools-palette__help">{help}</p>}
 				</fieldset>
 			);
@@ -333,6 +363,7 @@ const FieldRow = ({
 					{help && <p className="wpcp-tools-palette__help">{help}</p>}
 					<Button
 						variant="secondary"
+						size="compact"
 						disabled={full}
 						onClick={() => set(field.path, [...rows, emptyValue(field.item)])}
 					>
@@ -407,6 +438,15 @@ const RunResult = ({ result }: { result: unknown }) => (
 	</div>
 );
 
+const RunShortcut = () => (
+	<kbd
+		className="wpcp-tools-palette__kbd"
+		aria-label={shortcutAriaLabel.primary("Enter")}
+	>
+		{displayShortcut.primary("↵")}
+	</kbd>
+);
+
 export const AbilityForm = ({
 	ability,
 	onBack,
@@ -427,23 +467,59 @@ export const AbilityForm = ({
 		startingInput(form, branch),
 	);
 	const [run, setRun] = useState<RunState>(IDLE);
+	const [showOptions, setShowOptions] = useState(false);
+	// An untouched field is not wrong yet: its error waits for an edit or a run.
+	const [touched, setTouched] = useState<Set<string>>(() => new Set());
+	const [attempts, setAttempts] = useState(0);
+	const attempted = attempts > 0;
 	const errors = fieldErrors(active, input);
+	const shownErrors = attempted
+		? errors
+		: Object.fromEntries(
+				Object.entries(errors).filter(([key]) => touched.has(key)),
+			);
 	const container = useRef<HTMLFormElement>(null);
 	const confirmRun = useRef<HTMLButtonElement>(null);
 	const outcome = useRef<HTMLDivElement>(null);
 
+	const { required, optional } = useMemo(
+		() => splitFields(active.fields),
+		[active],
+	);
+	const optionalError = optional.some((field) =>
+		hasErrorIn(field, shownErrors),
+	);
+	const optionsOpen = showOptions || optionalError;
+
 	const confirm = confirmKind(ability);
 	const runnable = !active.unsupported && !!runHref(ability);
-	const blocked = !!Object.keys(errors).length || hasUnfillable(active);
+	// Only what no edit can fix disables Run; a fixable error is shown on the attempt.
+	const stuck = !runnable || hasUnfillable(active);
+	const blocked = stuck || !!Object.keys(errors).length;
 
+	// With nothing to fill in, Enter should already be on Run.
 	useEffect(() => {
-		container.current?.querySelector<HTMLElement>("input, select")?.focus();
+		container.current
+			?.querySelector<HTMLElement>(
+				".wpcp-tools-palette__form-body input, .wpcp-tools-palette__form-body select, button[type=submit]",
+			)
+			?.focus();
 	}, []);
+
+	// After the render that marks it: the class is what finds the field.
+	useEffect(() => {
+		if (!attempts) return;
+		container.current
+			?.querySelector<HTMLElement>(".has-error input, .has-error select")
+			?.focus();
+	}, [attempts]);
 
 	// Without this a second Enter re-submits the form instead of confirming.
 	useEffect(() => {
-		if (run.status === "confirming") confirmRun.current?.focus();
-	}, [run.status]);
+		if (run.status !== "confirming") return;
+		confirmRun.current?.focus();
+		speak(confirmText(confirm), "assertive");
+	}, [run.status, confirm]);
 
 	// The form scrolls, so an outcome appended below it can arrive off-screen.
 	useEffect(() => {
@@ -454,6 +530,7 @@ export const AbilityForm = ({
 
 	const set = useCallback<Setter>((path, value) => {
 		setInput((current: unknown) => writeAt(current, path, value));
+		setTouched((current) => new Set(current).add(path.join(".") || "$"));
 		// A result shown for input since changed is a lie. A run in flight keeps its own.
 		setRun((current) => (current.status === "running" ? current : IDLE));
 	}, []);
@@ -482,127 +559,195 @@ export const AbilityForm = ({
 		}
 	}, [ability, active, branch, form, input]);
 
-	const submit = (event: React.FormEvent) => {
-		event.preventDefault();
-		// A form with no submit button at all still submits on Enter.
-		if (!runnable || blocked) return;
+	const start = useCallback(() => {
+		if (stuck || run.status === "running") return;
+		if (blocked) return setAttempts((count) => count + 1);
 		if (confirm === "none") return void send();
 
 		setRun({ status: "confirming" });
+	}, [blocked, confirm, run.status, send, stuck]);
+
+	const submit = (event: React.FormEvent) => {
+		event.preventDefault();
+		// A form with no submit button at all still submits on Enter.
+		start();
 	};
+
+	// Enter only submits from a text field; this runs from anywhere in the form.
+	const onKeyDown = (event: React.KeyboardEvent) => {
+		if (!isKeyboardEvent.primary(event.nativeEvent, "Enter")) return;
+		event.preventDefault();
+
+		if (run.status === "confirming") return void send();
+		start();
+	};
+
+	const running = run.status === "running";
 
 	return (
 		<form
 			className="wpcp-tools-palette__form"
 			ref={container}
 			onSubmit={submit}
+			onKeyDown={onKeyDown}
 		>
 			<div className="wpcp-tools-palette__form-header">
 				<Button
 					icon={isRTL() ? chevronRight : chevronLeft}
 					label={__("Back to results", "command-palette-tools")}
+					size="compact"
 					onClick={onBack}
 				/>
 				<h2>{ability.label}</h2>
+				<span className="wpcp-tools-palette__badge">
+					{abilitySource(ability)}
+				</span>
+				{confirm === "destructive" && (
+					<span className="wpcp-tools-palette__badge is-destructive">
+						{__("Deletes data", "command-palette-tools")}
+					</span>
+				)}
 			</div>
-			{ability.description && (
-				<p className="wpcp-tools-palette__help">{ability.description}</p>
-			)}
-			{form.union && (
-				<SelectControl
-					__nextHasNoMarginBottom
-					label={form.union.label ?? __("Kind", "command-palette-tools")}
-					value={branch ?? form.union.branches[0].key}
-					options={form.union.branches.map((option, index) => ({
-						label:
-							option.name ??
-							sprintf(
-								/* translators: %d: position of an unnamed choice in the list. */
-								__("Option %d", "command-palette-tools"),
-								index + 1,
-							),
-						value: option.key,
-					}))}
-					onChange={(key) => {
-						setInput(switchBranch(form, branch, key, input));
-						setBranch(key);
-						setRun((current) =>
-							current.status === "running" ? current : IDLE,
-						);
-					}}
-				/>
-			)}
-			{active.unsupported ? (
-				<Notice status="warning" isDismissible={false}>
-					{reasonText(active.unsupported)}
-				</Notice>
-			) : (
-				active.fields.map((field) => (
-					<FieldRow
-						key={field.key}
-						field={field}
-						input={input}
-						errors={errors}
-						set={set}
+			<div className="wpcp-tools-palette__form-body">
+				{ability.description && (
+					<p className="wpcp-tools-palette__description">
+						{ability.description}
+					</p>
+				)}
+				{form.union && (
+					<SelectControl
+						__nextHasNoMarginBottom
+						label={form.union.label ?? __("Kind", "command-palette-tools")}
+						value={branch ?? form.union.branches[0].key}
+						options={form.union.branches.map((option, index) => ({
+							label:
+								option.name ??
+								sprintf(
+									/* translators: %d: position of an unnamed choice in the list. */
+									__("Option %d", "command-palette-tools"),
+									index + 1,
+								),
+							value: option.key,
+						}))}
+						onChange={(key) => {
+							setInput(switchBranch(form, branch, key, input));
+							setBranch(key);
+							setRun((current) =>
+								current.status === "running" ? current : IDLE,
+							);
+						}}
 					/>
-				))
+				)}
+				{active.unsupported ? (
+					<Notice status="warning" isDismissible={false}>
+						{reasonText(active.unsupported)}
+					</Notice>
+				) : (
+					required.map((field) => (
+						<FieldRow
+							key={field.key}
+							field={field}
+							input={input}
+							errors={shownErrors}
+							set={set}
+						/>
+					))
+				)}
+				{!active.unsupported && optional.length > 0 && (
+					<div className="wpcp-tools-palette__options">
+						<Button
+							className="wpcp-tools-palette__options-toggle"
+							icon={optionsOpen ? chevronUp : chevronDown}
+							iconPosition="right"
+							size="compact"
+							aria-expanded={optionsOpen}
+							// Open on an error it holds, since closing would hide the fix.
+							disabled={optionalError}
+							onClick={() => setShowOptions(!optionsOpen)}
+						>
+							{optionsOpen
+								? __("Hide options", "command-palette-tools")
+								: sprintf(
+										/* translators: %d: how many optional fields the form is hiding. */
+										_n(
+											"Show %d option",
+											"Show %d options",
+											optional.length,
+											"command-palette-tools",
+										),
+										optional.length,
+									)}
+						</Button>
+						{optionsOpen &&
+							optional.map((field) => (
+								<FieldRow
+									key={field.key}
+									field={field}
+									input={input}
+									errors={shownErrors}
+									set={set}
+								/>
+							))}
+					</div>
+				)}
+				{!active.unsupported && !form.union && !active.fields.length && (
+					<p className="wpcp-tools-palette__help">
+						{__("This ability takes no input.", "command-palette-tools")}
+					</p>
+				)}
+				{!runHref(ability) && (
+					<Notice status="warning" isDismissible={false}>
+						{__(
+							"This ability cannot be run from here.",
+							"command-palette-tools",
+						)}
+					</Notice>
+				)}
+				{run.status === "done" && (
+					<div ref={outcome}>
+						<RunResult result={run.result} />
+					</div>
+				)}
+				{run.status === "failed" && (
+					<div ref={outcome}>
+						<Notice status="error" isDismissible={false}>
+							{run.message}
+						</Notice>
+					</div>
+				)}
+			</div>
+			{runnable && run.status === "confirming" && (
+				<div
+					className={`wpcp-tools-palette__form-footer is-confirming is-${confirm}`}
+				>
+					<p className="wpcp-tools-palette__confirm">{confirmText(confirm)}</p>
+					<Button variant="tertiary" onClick={() => setRun(IDLE)}>
+						{__("Cancel", "command-palette-tools")}
+					</Button>
+					<Button
+						ref={confirmRun}
+						variant="primary"
+						isDestructive={confirm === "destructive"}
+						onClick={() => void send()}
+					>
+						{confirm === "destructive"
+							? __("Run anyway", "command-palette-tools")
+							: __("Yes, run it", "command-palette-tools")}
+					</Button>
+				</div>
 			)}
-			{!active.unsupported && !form.union && !active.fields.length && (
-				<p className="wpcp-tools-palette__help">
-					{__("This ability takes no input.", "command-palette-tools")}
-				</p>
-			)}
-			{!runHref(ability) && (
-				<Notice status="warning" isDismissible={false}>
-					{__("This ability cannot be run from here.", "command-palette-tools")}
-				</Notice>
-			)}
-			{runnable && (
-				<div className="wpcp-tools-palette__actions">
+			{runnable && run.status !== "confirming" && (
+				<div className="wpcp-tools-palette__form-footer">
+					<RunShortcut />
 					<Button
 						variant="primary"
 						type="submit"
 						accessibleWhenDisabled
-						disabled={blocked || run.status === "running"}
-						isBusy={run.status === "running"}
+						disabled={stuck || running}
+						isBusy={running}
 					>
 						{__("Run", "command-palette-tools")}
 					</Button>
-				</div>
-			)}
-			{run.status === "confirming" && (
-				<Notice
-					status={confirm === "destructive" ? "error" : "warning"}
-					isDismissible={false}
-					spokenMessage={confirmText(confirm)}
-				>
-					<p>{confirmText(confirm)}</p>
-					<div className="wpcp-tools-palette__actions">
-						<Button
-							ref={confirmRun}
-							variant="primary"
-							onClick={() => void send()}
-						>
-							{confirm === "destructive"
-								? __("Run anyway", "command-palette-tools")
-								: __("Yes, run it", "command-palette-tools")}
-						</Button>
-						<Button variant="tertiary" onClick={() => setRun(IDLE)}>
-							{__("Cancel", "command-palette-tools")}
-						</Button>
-					</div>
-				</Notice>
-			)}
-			{run.status === "done" && (
-				<div ref={outcome}>
-					<RunResult result={run.result} />
-				</div>
-			)}
-			{run.status === "failed" && (
-				<div ref={outcome}>
-					<Notice status="error" isDismissible={false}>
-						{run.message}
-					</Notice>
 				</div>
 			)}
 		</form>

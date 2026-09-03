@@ -56,6 +56,7 @@ test("an ability runs from the front end", async ({ page }) => {
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get Site Information/ }).click();
 
+	await palette.getByRole("button", { name: "Show 1 option" }).click();
 	const fields = palette.getByRole("group", { name: "Fields" });
 	await fields.getByRole("checkbox", { name: "url", exact: true }).check();
 	await palette.getByRole("button", { name: "Run", exact: true }).click();
@@ -73,7 +74,9 @@ test("recents follow the user between the front end and wp-admin", async ({
 
 	const palette = page.getByRole("dialog", { name: "Ability palette" });
 	await palette.getByRole("option", { name: /Get User Information/ }).click();
-	await expect(palette.getByRole("group", { name: "Fields" })).toBeVisible();
+	await expect(
+		palette.getByRole("heading", { name: "Get User Information" }),
+	).toBeVisible();
 
 	await admin.visitAdminPage("plugins.php");
 	await page.keyboard.press(`${modifier}+j`);

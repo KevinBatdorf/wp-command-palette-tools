@@ -38,6 +38,9 @@ const embedder = createEmbedder();
 // Long enough that a half-typed word is never what gets embedded.
 const EMBED_DEBOUNCE = 150;
 
+// Still on open, where the modal itself is what moves.
+type Direction = "still" | "forward" | "back";
+
 type Result = {
 	id: string;
 	label: string;
@@ -120,11 +123,19 @@ export const PaletteMenu = () => {
 		query: string;
 		similarity: Similarity;
 	} | null>(null);
+	const [selected, setSelected] = useState("");
+	const [direction, setDirection] = useState<Direction>("still");
 
 	const input = useRef<HTMLInputElement>(null);
 
-	const open = useCallback(() => setIsOpen(true), []);
-	const toggle = useCallback(() => setIsOpen((wasOpen) => !wasOpen), []);
+	const open = useCallback(() => {
+		setDirection("still");
+		setIsOpen(true);
+	}, []);
+	const toggle = useCallback(() => {
+		setDirection("still");
+		setIsOpen((wasOpen) => !wasOpen);
+	}, []);
 	useOpenPalette(toggle);
 	useDoorwayCommand(open);
 
@@ -134,11 +145,16 @@ export const PaletteMenu = () => {
 		setIsOpen(false);
 	}, []);
 
+	const back = useCallback(() => {
+		setDirection("back");
+		setPicked(null);
+	}, []);
+
 	// Modal routes Escape here, so without this a form's Escape closes it all.
 	const requestClose = useCallback(() => {
-		if (picked) return setPicked(null);
+		if (picked) return back();
 		close();
-	}, [close, picked]);
+	}, [back, close, picked]);
 
 	// Modal focuses its frame, not the search field, so typing would go nowhere.
 	useEffect(() => {
@@ -191,6 +207,7 @@ export const PaletteMenu = () => {
 
 	const selectAbility = useCallback((ability: Ability) => {
 		setRecent(recents.remember(ability.name));
+		setDirection("forward");
 		setPicked(ability);
 	}, []);
 
@@ -249,6 +266,24 @@ export const PaletteMenu = () => {
 	const state = catalog && catalogState(catalog);
 	const count = tools.length + recentResults.length + otherResults.length;
 
+	const groups = useMemo(
+		() => [recentResults, tools, otherResults].filter((group) => group.length),
+		[recentResults, tools, otherResults],
+	);
+	const onListKeyDown = (event: React.KeyboardEvent) => {
+		if (event.key !== "Tab" || groups.length < 2) return;
+		event.preventDefault();
+		// Modal's focus trap acts on Tab too, and does not check defaultPrevented.
+		event.stopPropagation();
+		input.current?.focus();
+
+		const at = groups.findIndex((group) =>
+			group.some((result) => result.id === selected),
+		);
+		const step = event.shiftKey ? -1 : 1;
+		setSelected(groups[(at + step + groups.length) % groups.length][0].id);
+	};
+
 	useEffect(() => {
 		if (!isOpen || picked || state === null) return;
 
@@ -283,56 +318,80 @@ export const PaletteMenu = () => {
 			size="medium"
 			contentLabel={__("Ability palette", "command-palette-tools")}
 		>
-			{picked ? (
-				<AbilityForm
-					key={picked.name}
-					ability={picked}
-					onBack={() => setPicked(null)}
-				/>
-			) : (
-				<div className="commands-command-menu__container">
-					<Command
-						label={__("Search abilities", "command-palette-tools")}
-						shouldFilter={false}
-						loop
-					>
-						<div className="commands-command-menu__header">
-							<Icon
-								className="commands-command-menu__header-search-icon"
-								icon={searchIcon}
-							/>
-							<Command.Input
-								ref={input}
-								value={search}
-								onValueChange={setSearch}
-								placeholder={__("Search abilities", "command-palette-tools")}
-							/>
+			<div
+				key={picked ? "form" : "list"}
+				className={`wpcp-tools-palette__view is-${direction}`}
+			>
+				{picked ? (
+					<AbilityForm key={picked.name} ability={picked} onBack={back} />
+				) : (
+					<div className="commands-command-menu__container">
+						<Command
+							label={__("Search abilities", "command-palette-tools")}
+							shouldFilter={false}
+							loop
+							value={selected}
+							onValueChange={setSelected}
+							onKeyDown={onListKeyDown}
+						>
+							<div className="commands-command-menu__header">
+								<Icon
+									className="commands-command-menu__header-search-icon"
+									icon={searchIcon}
+								/>
+								<Command.Input
+									ref={input}
+									value={search}
+									onValueChange={setSearch}
+									placeholder={__("Search abilities", "command-palette-tools")}
+								/>
+							</div>
+							<Command.List label={__("Results", "command-palette-tools")}>
+								{state === null && (
+									<Command.Loading>
+										{__("Loading abilities…", "command-palette-tools")}
+									</Command.Loading>
+								)}
+								<ResultGroup
+									heading={__("Recent", "command-palette-tools")}
+									results={recentResults}
+								/>
+								<ResultGroup
+									heading={__("Tools", "command-palette-tools")}
+									results={tools}
+								/>
+								<ResultGroup
+									heading={__("Abilities", "command-palette-tools")}
+									results={otherResults}
+								/>
+								{message && (
+									<div className="wpcp-tools-palette__notice">{message}</div>
+								)}
+							</Command.List>
+						</Command>
+						<div className="wpcp-tools-palette__hints" aria-hidden="true">
+							<span>
+								<kbd className="wpcp-tools-palette__kbd">↑↓</kbd>
+								{__("Navigate", "command-palette-tools")}
+							</span>
+							{groups.length > 1 && (
+								<span>
+									<kbd className="wpcp-tools-palette__kbd">Tab</kbd>
+									{__("Next section", "command-palette-tools")}
+								</span>
+							)}
+							<span>
+								<kbd className="wpcp-tools-palette__kbd">↵</kbd>
+								{__("Open", "command-palette-tools")}
+							</span>
+							<span>
+								<kbd className="wpcp-tools-palette__kbd">Esc</kbd>
+								{__("Close", "command-palette-tools")}
+							</span>
 						</div>
-						<Command.List label={__("Results", "command-palette-tools")}>
-							{state === null && (
-								<Command.Loading>
-									{__("Loading abilities…", "command-palette-tools")}
-								</Command.Loading>
-							)}
-							<ResultGroup
-								heading={__("Recent", "command-palette-tools")}
-								results={recentResults}
-							/>
-							<ResultGroup
-								heading={__("Tools", "command-palette-tools")}
-								results={tools}
-							/>
-							<ResultGroup
-								heading={__("Abilities", "command-palette-tools")}
-								results={otherResults}
-							/>
-							{message && (
-								<div className="wpcp-tools-palette__notice">{message}</div>
-							)}
-						</Command.List>
-					</Command>
-				</div>
-			)}
+					</div>
+				)}
+			</div>
 		</Modal>
 	);
 };

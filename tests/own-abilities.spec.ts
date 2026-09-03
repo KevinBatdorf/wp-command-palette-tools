@@ -68,16 +68,6 @@ const BUNDLED: Record<
 		readonly: false,
 		destructive: true,
 	},
-	"wpcp/list-abilities": {
-		category: "abilities",
-		readonly: true,
-		destructive: false,
-	},
-	"wpcp/describe-ability": {
-		category: "abilities",
-		readonly: true,
-		destructive: false,
-	},
 };
 
 test.beforeEach(async ({ requestUtils }) => {
