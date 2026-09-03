@@ -166,7 +166,13 @@ export const AbilityResult = ({
 		<div className="wpcp-tools-palette__outcome">
 			<Stats stats={view.stats} />
 			<div className="wpcp-tools-palette__table-scroll">
-				<table className="wpcp-tools-palette__table">
+				<table
+					className={
+						showActions
+							? "wpcp-tools-palette__table has-actions"
+							: "wpcp-tools-palette__table"
+					}
+				>
 					<thead>
 						<tr>
 							{view.columns.map((column) => (

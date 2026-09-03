@@ -458,11 +458,10 @@
 }
 
 /* A table of any width scrolls itself rather than widening the palette. */
+/* Padding here shows the row underneath beside the pinned cell. */
 /* no-prefix */
 .wpcp-tools-palette__table-scroll {
 	overflow-x: auto;
-	margin: 0 -16px;
-	padding: 0 16px;
 }
 
 /* no-prefix */
@@ -514,4 +513,21 @@
 	flex-wrap: wrap;
 	justify-content: flex-end;
 	gap: 4px;
+}
+
+/* Without this a sideways scroll hides the row's actions. */
+/* no-prefix */
+.wpcp-tools-palette__table.has-actions th:last-child,
+.wpcp-tools-palette__table.has-actions td:last-child {
+	position: sticky;
+	right: 0;
+	padding-left: 12px;
+	background: #fff;
+	box-shadow: -8px 0 8px -8px rgba(0, 0, 0, 0.2);
+}
+
+/* Wrapped buttons would make one row twice the height of the next. */
+/* no-prefix */
+.wpcp-tools-palette__table .wpcp-tools-palette__row-actions {
+	flex-wrap: nowrap;
 }
