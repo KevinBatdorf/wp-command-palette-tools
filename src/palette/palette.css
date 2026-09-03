@@ -84,25 +84,24 @@
 @media (prefers-reduced-motion: no-preference) {
 	/* no-prefix */
 	.wpcp-tools-palette__view.is-forward {
-		animation: wpcp-tools-view-forward 180ms cubic-bezier(0.19, 1, 0.22, 1);
+		animation: wpcp-tools-view-forward 140ms cubic-bezier(0.19, 1, 0.22, 1);
 	}
 
 	/* no-prefix */
 	.wpcp-tools-palette__view.is-back {
-		animation: wpcp-tools-view-back 180ms cubic-bezier(0.19, 1, 0.22, 1);
+		animation: wpcp-tools-view-back 140ms cubic-bezier(0.19, 1, 0.22, 1);
 	}
 }
 
+/* An opacity keyframe here blanks the search field too. */
 @keyframes wpcp-tools-view-forward {
 	from {
-		opacity: 0;
 		transform: translateX(var(--wpcp-tools-shift));
 	}
 }
 
 @keyframes wpcp-tools-view-back {
 	from {
-		opacity: 0;
 		transform: translateX(calc(-1 * var(--wpcp-tools-shift)));
 	}
 }
