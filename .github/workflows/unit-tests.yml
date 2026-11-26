@@ -6,6 +6,9 @@ on:
   push:
     branches: main
 
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   test:
     name: Unit tests

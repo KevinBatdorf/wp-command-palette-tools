@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   trunk:
     name: Push to WordPress.org

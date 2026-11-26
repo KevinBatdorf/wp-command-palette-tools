@@ -3,6 +3,9 @@ on:
   push:
   workflow_dispatch:
 
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   build:
     name: Build zip file
