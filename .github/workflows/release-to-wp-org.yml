@@ -2,6 +2,9 @@ name: Deploy to WordPress.org
 on:
   release:
     types: [published]
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   tag:
     name: Make release

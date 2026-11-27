@@ -3,6 +3,9 @@ on:
   push:
     branches:
       - main
+env:
+  ONNXRUNTIME_NODE_INSTALL_CUDA: skip
+
 jobs:
   trunk:
     name: Push to WordPress.org
@@ -32,3 +35,4 @@ jobs:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SLUG: command-palette-tools
+          IGNORE_OTHER_FILES: true
